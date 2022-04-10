@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/src",
+                "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/inc",
+                "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/src",
+                "${env:DEVLIBDIR}/CMSIS/Device/ST/STM32H7xx/Include",
+                "${env:DEVLIBDIR}/CMSIS/Include",
+                "${env:DEVLIBDIR}/LwIP/src/include",
+                "${env:DEVLIBDIR}/LwIP/system",
+                "${env:DEVLIBDIR}/etl-master/include",
+                "${env:DEVLIBDIR}/googletest-release-1.11.0/googletest/include",
+                "${env:DEVLIBDIR}/googletest-release-1.11.0/googlemock/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "STM32H743xx",
+                "USE_HAL_DRIVER"
+            ],
+            "compilerPath": "C:\\msys64\\mingw64\\bin\\gcc.exe",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}
