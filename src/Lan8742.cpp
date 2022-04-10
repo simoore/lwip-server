@@ -72,7 +72,7 @@ Lan8742::Status Lan8742::getLinkState() {
         }
         return Status::HalfDuplex10Mbit;	
     } else {
-        const auto [ok3, physcsr] = mEth.readReg(mDevAddr, sAddr_BCR);
+        const auto [ok3, physcsr] = mEth.readReg(mDevAddr, sAddr_PHYSCSR);
         if(!ok3) {
             return Status::ReadError;
         }

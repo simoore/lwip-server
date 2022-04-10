@@ -10,6 +10,21 @@ public:
     EthMock mEthMock;
     BaseMock mBaseMock;
     Lan8742 mPhy{mBaseMock, mEthMock};
+
+    void initExpectationsWithDevAddr1() {
+        static constexpr uint32_t addr{1};
+        EXPECT_CALL(mEthMock, readReg(_, Lan8742::sAddr_SMR))
+            .WillOnce(Return(std::pair{false, 0}))
+            .WillOnce(Return(std::pair{true, addr}));
+        EXPECT_CALL(mEthMock, writeReg(addr, Lan8742::sAddr_BCR, Lan8742::sMask_BCR_SOFTRESET))
+            .WillOnce(Return(true));
+        EXPECT_CALL(mBaseMock, tick())
+            .WillOnce(Return(0));
+        EXPECT_CALL(mEthMock, readReg(addr, Lan8742::sAddr_BCR))
+            .WillOnce(Return(std::pair{true, 0}));
+        EXPECT_CALL(mBaseMock, wait(Lan8742::sInitializationWaitTime_ms))
+            .Times(1);
+    }
 };
 
 TEST_F(Lan8742Test, CannotFindDevice) {
@@ -56,18 +71,57 @@ TEST_F(Lan8742Test, TimeoutBeforeReset) {
 }
 
 TEST_F(Lan8742Test, InitSequence) {
-    const uint32_t addr{1};
-    EXPECT_CALL(mEthMock, readReg(_, Lan8742::sAddr_SMR))
-        .WillOnce(Return(std::pair{false, 0}))
-        .WillOnce(Return(std::pair{true, addr}));
-    EXPECT_CALL(mEthMock, writeReg(addr, Lan8742::sAddr_BCR, Lan8742::sMask_BCR_SOFTRESET))
-        .WillOnce(Return(true));
-    EXPECT_CALL(mBaseMock, tick())
-        .WillOnce(Return(0));
-    EXPECT_CALL(mEthMock, readReg(addr, Lan8742::sAddr_BCR))
-        .WillOnce(Return(std::pair{true, 0}));
-    EXPECT_CALL(mBaseMock, wait(Lan8742::sInitializationWaitTime_ms))
-        .Times(1);
+    initExpectationsWithDevAddr1();
     auto status = mPhy.init();
     ASSERT_THAT(status, Eq(Lan8742::Status::Ok));
+}
+
+TEST_F(Lan8742Test, LinkDownTest) {
+    initExpectationsWithDevAddr1();
+    mPhy.init();
+
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_BSR))
+        .WillOnce(Return(std::pair{true, 0}));
+    auto status = mPhy.getLinkState();
+    ASSERT_THAT(status, Eq(Lan8742::Status::LinkDown));
+}
+
+TEST_F(Lan8742Test, HalfDuplex100Mbit) {
+    initExpectationsWithDevAddr1();
+    mPhy.init();
+
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_BSR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_BSR_LINK_STATUS}));
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_BCR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_BCR_SPEED_SELECT}));
+    auto status = mPhy.getLinkState();
+    ASSERT_THAT(status, Eq(Lan8742::Status::HalfDuplex100Mbit));
+}
+
+TEST_F(Lan8742Test, AutoNegNotDone) {
+    initExpectationsWithDevAddr1();
+    mPhy.init();
+
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_BSR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_BSR_LINK_STATUS}));
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_BCR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_BCR_AUTONEGO_EN}));
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_PHYSCSR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_PHYSCSR_10BT_FD}));
+    auto status = mPhy.getLinkState();
+    ASSERT_THAT(status, Eq(Lan8742::Status::AutonegoNotDone));
+}
+
+TEST_F(Lan8742Test, FullDuplex10MbitAutoNegEn) {
+    initExpectationsWithDevAddr1();
+    mPhy.init();
+
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_BSR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_BSR_LINK_STATUS}));
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_BCR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_BCR_AUTONEGO_EN}));
+    EXPECT_CALL(mEthMock, readReg(1, Lan8742::sAddr_PHYSCSR))
+        .WillOnce(Return(std::pair{true, Lan8742::sMask_PHYSCSR_10BT_FD | Lan8742::sMask_PHYSCSR_AUTONEGO_DONE}));
+    auto status = mPhy.getLinkState();
+    ASSERT_THAT(status, Eq(Lan8742::Status::FullDuplex10Mbit));
 }
