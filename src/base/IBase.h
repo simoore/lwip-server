@@ -19,6 +19,17 @@ public:
     ///     The value of the system tick.
     virtual uint32_t tick() const = 0;
 
+    /// Service any system components that need to be executed routinely in the main loop/
+    virtual void service() = 0;
+
+    /// Transmits a debug message. Non-blocking operation.
+    ///
+    /// @param data
+    ///     The buffer containing the data.
+    /// @param size
+    ///     The size of the buffer.
+    virtual void debug(const char *data, int size) const = 0;
+
 }; // class IBase
 
 #endif // IBASE_H

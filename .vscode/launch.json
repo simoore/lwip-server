@@ -5,9 +5,31 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug unit tests.",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/unittests.exe",
+            "args": [],
+            "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
-            "executable": "${workspaceRoot}/build/echo_server.elf",
-            "name": "Debug Echo Server",
+            "environment": [
+                { "name": "Path", "value": "C:\\msys64\\mingw64\\bin;${env:Path}" }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe",
+            "setupCommands": [
+              {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+              }
+            ],
+        },
+        {
+            "cwd": "${workspaceRoot}/build",
+            "executable": "${workspaceRoot}/build/stm32h7-lwip-server.elf",
+            "name": "Debug STM32H7 LwIP Server",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
@@ -15,7 +37,8 @@
             "runToMain": true,
             "configFiles": [
                 "board/st_nucleo_h743zi.cfg"
-            ]
+            ],
+            "showDevDebugOutput": false
         }
     ]
 }

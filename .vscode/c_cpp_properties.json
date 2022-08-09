@@ -4,6 +4,10 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/src",
+                "${workspaceFolder}/src/stm32h7-base",
+                "${workspaceFolder}/src/base",
+                "${workspaceFolder}/src/utils",
+                "${workspaceFolder}/tests",
                 "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/inc",
                 "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/src",
                 "${env:DEVLIBDIR}/CMSIS/Device/ST/STM32H7xx/Include",
