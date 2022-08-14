@@ -1,5 +1,9 @@
 # Using LwIP to Build an Embedded Server
 
+## Features
+
+* TCP echo server on port 7.
+
 ## Building Projects with CMake
 
 For the STM32H7 application, build
@@ -18,11 +22,28 @@ cmake ..
 make
 ```
 
+## Notes
+
 * Add ARM GCC toolchain bin to the path in ~/.bash_profile
 * Variables defined in linker script should be referred to as value types, the convention is char, and then referenced
     to get there memory address. <https://sourceware.org/binutils/docs/ld/Source-Code-Reference.html>
-* main in the startup script needs to be called via assembly because the compiler does not allow direct calls to main
+* `main` in the startup script needs to be called via assembly because the compiler does not allow direct calls to main
     in cpp.
+* IP Address 192.168.x.x have been assigned for private networks and is used in this project.
+
+## Network Troubleshooting
+
+* `arp -a` lists all devices found on the network your machine is connected to.
+* `ipconfig /all` on windows will show the IP address and MAC address associated with a network interface along with 
+    some other details.
+
+## LwIP Debugging
+
+* When debugging LwIP, `ethernet_input` displays when a packet, the source and destination MAC address, and the payload
+    type. Payload types (https://en.wikipedia.org/wiki/EtherType) are for example 0x800 for IPv4 and ARP for 0x806.
+* MAC address ff:ff:ff:ff:ff:ff is a broadcast.
+* Don't use cacheing for the ethernet DMA buffers. You can use the address of LwIP's heap from lwipopts.h in the 
+    configuration of the MPU.
 
 ## Using `objdump`
 
@@ -44,26 +65,35 @@ Just to note, when I was searching for an initialization issue, I found construc
 and the constructors to static objects are called via functions created by the compiler that are prefixed with
 `_GLOBAL__sub_I`
 
-## Code Snippets
+## LwIP Port
 
-### Execution flow of `ETH_UpdateDescriptor` on startup
+Architecture specific includes must be placed in a folder called `arch` on the include path when compiling LwIP. These
+can include:
+* `bpstruct.h`: Statements to be appended to the start of a packed struct definition. We do not requrie this when
+    using GCC to compile. An example is apply the `#pragma pack(1)` precompiler statement when using the IAR compiler.
+* `epstruct.h`: Statements to be appended to the end of a packed struct definition.
+* `perf.h`: Is used for profiling sections of LwIP. PERF_START & PERF_STOP. We won't use this by setting `LWIP_PERF` 
+    to 0 in `lwipopts.h`.
+* `sys_arch.h`: Needs to be provided to define things like mutexes, semaphores, and threads if using `NO_SYS 0`, that 
+    is using an operating system. For bare metal, this isn't required.
+* `cc.h`: Contains settings related to machine architecture and compiler in use.
 
-```C++
-heth->RxDescList.RxBuildDescCnt = ETH_RX_DESC_CNT;
-ETH_UpdateDescriptor(heth);
-```
+## TODO: 
 
-`ETH_RX_DESC_CNT` is the number of RX Descriptors allocated in the ethernet peripheral.
-At startup, the execution of `ETH_UpdateDescriptor()` will build all descriptors. 
-Building descriptors involves the HAL layer asking the application for an allocated buffer that it can attach to 
-a decriptor to ready it for reception. The HAL library maintains a tail pointer & counter for built descriptors and
-a tail pointer and counter for descriptors that are ready for receiving data.
+* Determine the HSE, CSI, HSI values.
+* Unit test DMA buffer classes, I'm sure at least the TX one has a bug in it.
+* Build unit tests and arm binary at the same time using two cmake projects.
+* See if we can ping the STM32H7 device
+* Move stack and functions and application data to DTCMEM & ITCMEM
+* Investigate industrial protocols: EtherNet/IP, ControlNet, DeviceNet, Modbus, Profibus, EtherCAT and CC-Link
+* Exmaine COAP and any protocols in ROS that would be suitbable for a real-time device.
+* Make sure MPU region size and the LWIP RAM size are the same.
+* Allow _write to always use DMA by servicing the debug uart in the _read while loop.
+* Figure out where the 8Mhz HSE clock comes from on the board schematic (does it come from the STLINK processor?)
 
 ## References
 
 * [launch.json Exmamples for Cortex Debugging](https://github.com/haneefdm/cortex-debug-samples/blob/master/blink2/.vscode/launch.json)
-
-### Startup Code 
 
 ### Newlib syscalls to support printf() an scanf()
 
@@ -83,3 +113,12 @@ a tail pointer and counter for descriptors that are ready for receiving data.
 ### objdump
 
 * [Global constructor call not in .init_array section](<https://stackoverflow.com/questions/6343348/global-constructor-call-not-in-init-array-section>)
+
+### LwIP Porting, Debugging
+
+* [Porting For Bare Metal](https://lwip.fandom.com/wiki/Porting_For_Bare_Metal)
+* [Enabling debug output in LWIP](https://community.nxp.com/t5/LPC-Microcontrollers-Knowledge/Enabling-debug-output/ta-p/1128854)
+
+### MQTT
+
+* [MQTT: The Standard for IoT Messaging](https://mqtt.org/)

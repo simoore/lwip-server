@@ -15,7 +15,8 @@ string(REPLACE "\\" "/" DEVLIBDIR $ENV{DEVLIBDIR})
 set(HAL_DIR ${DEVLIBDIR}/STM32H7xx_HAL_Driver)
 set(CMSIS_DIR ${DEVLIBDIR}/CMSIS)
 set(LWIP_DIR ${DEVLIBDIR}/lwip)
-# include(${LWIP_DIR}/src/Filelists.cmake)
+set(ETL_DIR ${DEVLIBDIR}/etl-master)
+include(${LWIP_DIR}/src/Filelists.cmake)
 
 # Build options
 # https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html
@@ -28,6 +29,9 @@ set(WRN_OPTIONS -Wall -Werror)
 
 set(STM32H7_SOURCES
     src/Main.cpp
+    src/Network.cpp
+    src/stm32h7-base/ethernetif.c
+    src/stm32h7-base/lan8742.c
     src/stm32h7-base/stm32h7_startup.cpp
     src/stm32h7-base/stm32h7_system.cpp
     src/stm32h7-base/stm32h7_vectors.cpp
@@ -36,10 +40,14 @@ set(STM32H7_SOURCES
     src/stm32h7-base/Stm32h7Base.cpp
     src/utils/DmaRxBuffer.cpp
     src/utils/DmaTxBuffer.cpp
+    src/stm32h7-base/arch/sio.cpp
+    ${lwipnoapps_SRCS}
     ${HAL_DIR}/Src/stm32h7xx_hal.c
     ${HAL_DIR}/Src/stm32h7xx_hal_cortex.c
     ${HAL_DIR}/Src/stm32h7xx_hal_dma.c
     ${HAL_DIR}/Src/stm32h7xx_hal_dma_ex.c
+    ${HAL_DIR}/Src/stm32h7xx_hal_eth.c
+    ${HAL_DIR}/Src/stm32h7xx_hal_eth_ex.c
     ${HAL_DIR}/Src/stm32h7xx_hal_flash.c
     ${HAL_DIR}/Src/stm32h7xx_hal_flash_ex.c
     ${HAL_DIR}/Src/stm32h7xx_hal_gpio.c
@@ -67,6 +75,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${HAL_DIR}/Inc/Legacy
     ${CMSIS_DIR}/Device/ST/STM32H7xx/Include
     ${CMSIS_DIR}/Include
+    ${ETL_DIR}/include
+    ${LWIP_DIR}/src/include
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${MCU_OPTIONS} ${OPT_OPTIONS} ${DBG_OPTIONS} ${CPP_OPTIONS} 
@@ -92,8 +102,8 @@ add_custom_command(TARGET ${PROJECT_NAME}
     COMMAND arm-none-eabi-objcopy -O binary ${PROJECT_NAME}.elf ${PROJECT_NAME}.bin
 )
 
-# Generate disassembly
-add_custom_command(TARGET ${PROJECT_NAME}
-    POST_BUILD
-    COMMAND arm-none-eabi-objdump -D -S ${PROJECT_NAME}.elf > ${PROJECT_NAME}.list
-)
+# Generate disassembly - this generally takes some time so we don't want to execute it all the time.
+# add_custom_command(TARGET ${PROJECT_NAME}
+#     POST_BUILD
+#     COMMAND arm-none-eabi-objdump -D -S ${PROJECT_NAME}.elf > ${PROJECT_NAME}.list
+# )

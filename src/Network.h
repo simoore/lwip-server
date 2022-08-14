@@ -1,17 +1,9 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-// #include "lwip/opt.h"
-// #include "lwip/init.h"
-// #include "netif/etharp.h"
-// #include "lwip/netif.h"
-// #include "lwip/timeouts.h"
-// #include "lwip/dhcp.h"
-// #include "ethernetif.h"
-// #include "app_ethernet.h"
-// #include "tcp_echoserver.h"
-
-#include "EthernetInterface.h"
+#include <cstdint>
+#include "EthernetifCpp.h"
+#include "IBase.h"
 
 /// This class encaptulates initialization and servicing of LwIP TCP/IP stack and the ethernet interface.
 class Network {
@@ -28,16 +20,11 @@ public:
     static constexpr uint32_t sDhcpTimerPeriod_ms{500};
 
     /// The maximum number of tries to attain a IP address via DHCP.
-    static constexpr uint32_t sMaxDhcpTries{4};
+    static constexpr uint32_t sMaxDhcpTries{2};
 
     /*************************************************************************/
     /********** PUBLIC TYPES *************************************************/
     /*************************************************************************/
-
-    /// Configuration of the network. Includes the STM32 HAL configuration of the ethernet peripheral.
-    struct Config {
-        EthernetInterface::Config ethernetInterfaceCfg; ///< Ethernet peripheral config.
-    };
 
     /// States used to monitor the network managers handling of the DHCP clients attempt to attain an IP address.
     enum class DhcpState {
@@ -49,9 +36,15 @@ public:
         LinkDown            ///< Flags the cable is disconnected and ceases any attempts to attain an address.
     };
 
+    /// Callback from interface that indicates the status of the link has changed. It is used to start/stop the DHCP
+    /// process.
+    using LinkCallback = EthernetifCpp::LinkCallback;
+
     /*************************************************************************/
     /********** PUBLIC FUNCTIONS *********************************************/
     /*************************************************************************/
+
+    Network(IBase &base): mBase(base) {}
 
     /// This initializes the components of the network stack. It doesn't initialize the applications that use it such 
     /// as the echo server. It initializes the LwIP stack and the ethernet interface. The LwIP stack must be 
@@ -59,7 +52,7 @@ public:
     ///
     /// @param cfg
     ///     The configuration of the network stack.
-    void init(const Config &cfg);
+    void init();
 
     /// This is the main loop function that services the LwIP stack and the ethernet interface.
     ///
@@ -83,18 +76,24 @@ private:
     void dhcpProcess();
 
     /*************************************************************************/
-    /********** PRIVATE FIELDS ***********************************************/
+    /********** PRIVATE VARIABLES ********************************************/
     /*************************************************************************/
 
-    /// The ethernet interface handler.
-    EthernetInterface mInterface; 
+    /// Provides base platform fuctions.
+    IBase &mBase;
 
-    uint32_t mLinkTimer{0};     ///< Millisecond counts since we last checked the link state.
-    uint32_t mDhcpTimer{0};     ///< Millisecond counts since we last executed the DHCP process.
+    /// The ethernet interface handler.
+    EthernetifCpp mInterface; 
+
+    /// Millisecond counts since we last checked the link state.
+    uint32_t mLinkTimer{0};    
+
+    /// Millisecond counts since we last executed the DHCP process. 
+    uint32_t mDhcpTimer{0};     
 
     /// A state machine monitors the status of the DHCP client.
     DhcpState mDhcpState{DhcpState::LinkDown};
 
-}; // class NetworkManager
+}; // class Network
 
-#endif // NETWORK_MANAGER_H
+#endif // NETWORK_H

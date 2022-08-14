@@ -7,11 +7,11 @@
 /********** PUBLIC FUNCTIONS *********************************************/
 /*************************************************************************/
 
-void Network::init(const Config &cfg) {
+void Network::init() {
     lwip_init();
-    mInterface.init(cfg.ethernetInterfaceCfg);
-    mInterface.registerLinkCallback(etl::delegate<void(void)>::create<NetworkManager, 
-        &NetworkManager::linkStatusUpdated>(*this));
+    // TODO: pass in callback in init.
+    mInterface.registerLinkCallback(LinkCallback::create<Network, &Network::linkStatusUpdated>(*this));
+    mInterface.init();
 }
 
 void Network::service() {
@@ -19,9 +19,9 @@ void Network::service() {
     sys_check_timeouts();
     
     // Check status of link periodically.
-    uint32_t now = HAL_GetTick();
+    uint32_t now = mBase.tick();
     #if LWIP_NETIF_LINK_CALLBACK
-    if (now - mLinkTimer >= sLinkTimerPeriod_ms) {
+    if ((now - mLinkTimer) >= sLinkTimerPeriod_ms) {
         mLinkTimer = now;
         mInterface.checkLinkState();
     }
@@ -29,7 +29,7 @@ void Network::service() {
 
     // Execute DHCP process periodically.
     #if LWIP_DHCP
-    if (now - mDhcpTimer >= sDhcpTimerPeriod_ms) {
+    if ((now - mDhcpTimer) >= sDhcpTimerPeriod_ms) {
         mDhcpTimer = now;
         dhcpProcess();
     }

@@ -9,51 +9,34 @@
 int DmaTxBuffer::copy(const char *data, int size) {
     const int copySize = std::min(size, available());
     const int copyEnd = std::min(copySize, availableAtEnd());
-    std::copy_n(data, copyEnd, mEnd);
+    std::copy_n(data, copyEnd, mBuffer + mTail);
     if (copyEnd == copySize) {
-        mEnd += copyEnd;
+        mTail += copyEnd;
     } else {
         const int copyStart = copySize - copyEnd;
         std::copy_n(data + copyEnd, copyStart, mBuffer);
-        mEnd = mBuffer + copyStart;
+        mTail = copyStart;
     }
+    if (mTail == sBufferSize) {
+        mTail = 0;
+    }
+    mSize += copySize;
     return copySize;
 }
 
 
 DmaTxBuffer::Slice DmaTxBuffer::getSlice() {
     if (mLastSlice.data) {
-        if (mBegin + mLastSlice.size != bufferEnd()) {
-            mBegin += mLastSlice.size;
-        } else {
-            mBegin = mBuffer;
+        mHead += mLastSlice.size;
+        mSize -= mLastSlice.size;
+        if (mHead + mLastSlice.size == sBufferSize) {
+            mHead = 0;
         }
     }
-    if (mBegin <= mEnd) {
-        mLastSlice = Slice{mBegin, static_cast<int>(mEnd - mBegin)};
+    if (mHead <= mTail && mSize != sBufferSize) {
+        mLastSlice = Slice{mBuffer + mHead, static_cast<int>(mTail - mHead)};
     } else {
-        mLastSlice = Slice{mBegin, static_cast<int>(bufferEnd() - mBegin)};
+        mLastSlice = Slice{mBuffer + mHead, static_cast<int>(sBufferSize - mHead)};
     }
     return mLastSlice;
-}
-
-/*************************************************************************/
-/********** PRIVATE FUNCTIONS ********************************************/
-/*************************************************************************/
-
-int DmaTxBuffer::availableAtStart() const {
-    if (mBegin <= mEnd) {
-        return mBegin - mBuffer;
-    } else {
-        return 0;
-    }
-}
-
-
-int DmaTxBuffer::availableAtEnd() const {
-    if (mBegin <= mEnd) {
-        return bufferEnd() - mEnd;
-    } else {
-        return mBegin - mEnd;
-    }
 }

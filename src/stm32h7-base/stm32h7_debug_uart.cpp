@@ -14,6 +14,7 @@ struct DebugUartConfig {
     uint32_t baud{1500000};                 ///< Baud rate used by the debug UART peripheral.
     uint32_t blockingTxTimeout_ms{1000};    ///< The timeout setting for blocking UART operations.
     bool useStreamRx{true};                 ///< Whether the RX channel uses blocking for a streaming DMA method.
+    bool useStreamTx{true};                 ///< If true, sends _write data to DMA buffer (needs to be serviced).
 };
 
 /*************************************************************************/
@@ -33,9 +34,11 @@ static __attribute((section(".dmamem1"), aligned(32))) DmaRxBuffer sRxBuffer;
 
 /// This is the DMA buffer for UART TX. Make sure the buffers are in memory locations accessible by the DMA peripheral 
 /// they are streaming to.
-static __attribute((section(".dmamem1"))) DmaTxBuffer sTxBuffer;
+static __attribute((section(".dmamem1"), aligned(32))) DmaTxBuffer sTxBuffer;
 
 static_assert((sRxBuffer.sBufferSize % 32) == 0, 
+    "Buffer size should be a multiple of 32 bytes for STM32H7 cache coherency operations.");
+static_assert((sTxBuffer.sBufferSize % 32) == 0, 
     "Buffer size should be a multiple of 32 bytes for STM32H7 cache coherency operations.");
 
 /*************************************************************************/
@@ -94,9 +97,13 @@ void debugUartTx(const char *data, int size) {
 ///     The size of the data to write to the buffer.
 extern "C" int _write(int fd, char *data, int size) {
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
-        HAL_UART_Transmit(&sHuart, reinterpret_cast<const uint8_t *>(data), static_cast<uint16_t>(size), 
-            sConfig.blockingTxTimeout_ms);
-        return size; 
+        if (sConfig.useStreamTx) {
+            return sTxBuffer.copy(data, size);
+        } else {
+            HAL_UART_Transmit(&sHuart, reinterpret_cast<const uint8_t *>(data), static_cast<uint16_t>(size), 
+                sConfig.blockingTxTimeout_ms);
+            return size; 
+        }
     }
     errno = EBADF;
     return -1;
@@ -147,6 +154,7 @@ void debugUartService() {
     bool uartTxIdle = sHuart.gState != HAL_UART_STATE_BUSY_TX;
     if (uartTxIdle && !sTxBuffer.empty()) {
         const auto slice = sTxBuffer.getSlice();
+        SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(sTxBuffer.buffer()), sTxBuffer.sBufferSize);
         HAL_UART_Transmit_DMA(&sHuart, slice.data, static_cast<uint16_t>(slice.size));
     }
 }

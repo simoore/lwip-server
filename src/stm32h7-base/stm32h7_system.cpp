@@ -1,42 +1,19 @@
+// If USE_HAL_DRIVER is defined, the header will include the stm32h7xx_hal_conf.h header where system parameters can be
+// defined.
 #include "stm32h7xx.h"
-
-#if !defined  (HSE_VALUE)
-    #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
-#endif /* HSE_VALUE */
-
-#if !defined  (CSI_VALUE)
-    #define CSI_VALUE    ((uint32_t)4000000) /*!< Value of the Internal oscillator in Hz*/
-#endif /* CSI_VALUE */
-
-#if !defined  (HSI_VALUE)
-    #define HSI_VALUE    ((uint32_t)64000000) /*!< Value of the Internal oscillator in Hz*/
-#endif /* HSI_VALUE */
-
-/************************* Miscellaneous Configuration ************************/
-/*!< Uncomment the following line if you need to use external SRAM or SDRAM mounted
-     on EVAL board as data memory  */
-/*#define DATA_IN_ExtSRAM */
-/*#define DATA_IN_ExtSDRAM*/
-
-/*!< Uncomment the following line if you need to use initialized data in D2 domain SRAM  */
-/* #define DATA_IN_D2_SRAM */
-
-/*!< Uncomment the following line if you need to relocate your vector Table in
-     Internal SRAM. */
-/* #define VECT_TAB_SRAM */
 
 /// Vector Table base offset field.
 static constexpr uint32_t sVectTabOffset{0};
 static_assert(sVectTabOffset % 0x200 == 0, "Vector table offset must be a multiple of 0x200");
 
-// These variable is updated in three ways:
-// 1) by calling CMSIS function SystemCoreClockUpdate()
-// 2) by calling HAL API function HAL_RCC_GetHCLKFreq()
-// 3) each time HAL_RCC_ClockConfig() is called to configure the system clock frequency 
-// Note: If you HAL_RCC_ClockConfig() this function to configure the system clock; then there is no need to call the 2 
-// first functions listed above, since SystemCoreClock variable is updated automatically.
-
+// These variable store clock frequencies and are used throught the HAL & CMSIS libraries. They need to be accurate for
+// correct functioning of the parts of the libraries that use them. They are updated in three ways:
+// 1) By calling CMSIS function SystemCoreClockUpdate(), which we haven't defined and do not call.
+// 2) By calling HAL API function HAL_RCC_GetHCLKFreq(), which we do not use.
+// 3) Each time HAL_RCC_ClockConfig() is called to configure the system clock frequency. We use this method in 
+//      Stm32H7Base::systemClockConfig.
 extern "C" {
+
 /// This global variable is used to store the frequency of the system core clock and is used in calculations in 
 /// the STM32H7 HAL library.
 uint32_t SystemCoreClock = 64000000;
@@ -44,15 +21,12 @@ uint32_t SystemCoreClock = 64000000;
 /// This is the clock speed of... It is used in the STM32 HAL library.
 uint32_t SystemD2Clock = 64000000;
 
-/// ...
+///...
 const uint8_t D1CorePrescTable[16] = {0, 0, 0, 0, 1, 2, 3, 4, 1, 2, 3, 4, 6, 7, 8, 9};
 }
 
 /// Initialize the FPU setting, vector table location and external memory configuration.
 void System_Init() {
-    #if defined (DATA_IN_D2_SRAM)
-    __IO uint32_t tmpreg;
-    #endif /* DATA_IN_D2_SRAM */
 
     /* FPU settings ------------------------------------------------------------*/
     #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
@@ -85,22 +59,12 @@ void System_Init() {
         *((__IO uint32_t*)0x51008108) = 0x00000001U;
     }
 
-    #if defined (DATA_IN_D2_SRAM)
-    /* in case of initialized data in D2 SRAM , enable the D2 SRAM clock */
-    RCC->AHB2ENR |= (RCC_AHB2ENR_D2SRAM1EN | RCC_AHB2ENR_D2SRAM2EN | RCC_AHB2ENR_D2SRAM3EN);
-    tmpreg = RCC->AHB2ENR;
-    (void) tmpreg;
-    #endif /* DATA_IN_D2_SRAM */
-
     /*
     * Disable the FMC bank1 (enabled after reset).
     * This, prevents CPU speculation access on this bank which blocks the use of FMC during
     * 24us. During this time the others FMC master (such as LTDC) cannot use it!
     */
     FMC_Bank1_R->BTCR[0] = 0x000030D2;
-    #if defined (DATA_IN_ExtSRAM) || defined (DATA_IN_ExtSDRAM)
-    SystemInit_ExtMemCtl(); 
-    #endif /* DATA_IN_ExtSRAM || DATA_IN_ExtSDRAM */
 
     /* Configure the Vector Table location add offset address ------------------*/
     #ifdef VECT_TAB_SRAM

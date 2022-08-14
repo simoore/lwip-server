@@ -14,7 +14,7 @@ public:
     /*************************************************************************/
 
     /// Size of the DMA Tx Buffer.
-    static constexpr int sBufferSize{128};
+    static constexpr int sBufferSize{1024};
 
     /*************************************************************************/
     /********** PUBLIC TYPES *************************************************/
@@ -53,7 +53,12 @@ public:
 
     /// True if the buffer contains no data to send.
     bool empty() const {
-        return mEnd == mBegin;
+        return mSize == 0;
+    }
+
+    /// Returns a pointer to the buffer.
+    uint8_t *buffer() {
+        return mBuffer;
     }
 
 private:
@@ -64,16 +69,20 @@ private:
 
     /// The amount of space in the buffer.
     int available() const {
-        return availableAtStart() + availableAtEnd();
+        return sBufferSize - mSize;
     }
 
     /// Returns the number of bytes from the start of the buffer to the begin pointer if the start of the buffer
     /// contains no data.
-    int availableAtStart() const;
+    int availableAtStart() const {
+        return (mHead <= mTail && mSize != sBufferSize) ? mHead : 0;
+    }
 
     /// Returns the number of bytes available in the buffer from the end pointer until either the begin pointer or 
     /// the end of the array.
-    int availableAtEnd() const;
+    int availableAtEnd() const {
+        return (mHead <= mTail && mSize != sBufferSize) ? sBufferSize - mTail : mHead - mTail;
+    }
 
     /// Points to the end of the buffer.
     const uint8_t *bufferEnd() const {
@@ -85,8 +94,9 @@ private:
     /*************************************************************************/
 
     uint8_t mBuffer[sBufferSize];   ///< Buffer for the DMA peripheral to transmit.
-    uint8_t *mBegin{mBuffer};       ///< Points to start of data in buffer.
-    uint8_t *mEnd{mBuffer};         ///< Points to end of data in buffer.
+    int mHead{0};                   ///< Offset from mBuffer to start of data.
+    int mTail{0};                   ///< Offset from mBuffer to end of data.
+    int mSize{0};                   ///< Amount of uncopied data in buffer.
 
     /// This was the last buffer slice returned to the application for transmission. Free it when the next buffer is
     /// requested.

@@ -1,9 +1,14 @@
 #include "Stm32h7Base.h"
+#include "stm32h7_lwipopts.h"
 
+/// Here we use the MPU for three purposes:
+/// 1) ...
+/// 2) We define the section where the ETH RX DMA buffers are as not cacheable.
+/// 3) We define the section where the ETH TX DMA buffers are (the LwIP heap) as not cacheable.
 void Stm32h7Base::mpuConfig() {
     MPU_Region_InitTypeDef MPU_InitStruct;
 
-    /* Disable the MPU */
+    // Disable the MPU before configuration.
     HAL_MPU_Disable();
     
     /* Configure the MPU as Strongly ordered for not defined regions */
@@ -21,8 +26,7 @@ void Stm32h7Base::mpuConfig() {
     
     HAL_MPU_ConfigRegion(&MPU_InitStruct);
     
-    /* Configure the MPU attributes as Device not cacheable
-        for ETH DMA descriptors */
+    // Configure the MPU attributes as Device not cacheable for ETH DMA descriptors.
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
     MPU_InitStruct.BaseAddress = 0x30000000;
     MPU_InitStruct.Size = MPU_REGION_SIZE_1KB;
@@ -37,10 +41,9 @@ void Stm32h7Base::mpuConfig() {
 
     HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-    /* Configure the MPU attributes as Normal Non Cacheable
-        for LwIP RAM heap which contains the Tx buffers */
+    // Configure the MPU attributes as Normal Non Cacheable for LwIP RAM heap which contains the Tx buffers.
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.BaseAddress = 0x30004000;
+    MPU_InitStruct.BaseAddress = LWIP_RAM_HEAP_POINTER;
     MPU_InitStruct.Size = MPU_REGION_SIZE_16KB;
     MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
     MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
@@ -53,7 +56,7 @@ void Stm32h7Base::mpuConfig() {
 
     HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-    /* Enable the MPU */
+    // Enable the MPU after configuration.
     HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
@@ -88,7 +91,7 @@ void Stm32h7Base::systemClockConfig() {
     regarding system frequency refer to product datasheet.  */
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-    while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
     /* Enable D2 domain SRAM3 Clock (0x30040000 AXI)*/
     __HAL_RCC_D2SRAM3_CLK_ENABLE();
@@ -111,14 +114,13 @@ void Stm32h7Base::systemClockConfig() {
     RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
     RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
     ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
-    if(ret != HAL_OK)
-    {
-    while(1){ ; }
+    if (ret != HAL_OK) {
+        while (true);
     }
 
-    /* Select PLL as system clock source and configure  bus clocks dividers */
-    RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_D1PCLK1 | RCC_CLOCKTYPE_PCLK1 | \
-            RCC_CLOCKTYPE_PCLK2  | RCC_CLOCKTYPE_D3PCLK1);
+    // Select PLL as system clock source and configure bus clocks dividers.
+    RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_D1PCLK1 
+        | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2  | RCC_CLOCKTYPE_D3PCLK1);
 
     RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
@@ -128,17 +130,16 @@ void Stm32h7Base::systemClockConfig() {
     RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
     RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
     ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4);
-    if(ret != HAL_OK)
-    {
-    while(1){ ; }
+    if (ret != HAL_OK) {
+        while (true);
     }
 
-    /*activate CSI clock mondatory for I/O Compensation Cell*/
+    // Activate CSI clock mondatory for I/O Compensation Cell.
     __HAL_RCC_CSI_ENABLE() ;
 
-    /* Enable SYSCFG clock mondatory for I/O Compensation Cell */
+    // Enable SYSCFG clock mondatory for I/O Compensation Cell.
     __HAL_RCC_SYSCFG_CLK_ENABLE() ;
 
-    /* Enables the I/O Compensation Cell */
+    // Enables the I/O Compensation Cell.
     HAL_EnableCompensationCell();
 }

@@ -1,51 +1,41 @@
-/**
- * Copyright (C) 2017, STMicroelectronics, all right reserved. 
- * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
- * OF SUCH DAMAGE.
- *
- * This file is part of the lwIP TCP/IP stack.
- *
- * Author: Adam Dunkels <adam@sics.se>
- ******************************************************************************
- */
+#ifndef LWIPOPTS_H
+#define LWIPOPTS_H
 
-#ifndef __LWIPOPTS_H__
-#define __LWIPOPTS_H__
+// Do not use LwIP profiling functions.
+#define LWIP_PERF 0
 
-/**
- * SYS_LIGHTWEIGHT_PROT==1: if you want inter-task protection for certain
- * critical regions during buffer allocation, deallocation and memory
- * allocation and deallocation.
- */
-#define SYS_LIGHTWEIGHT_PROT    0
+// Debugging options.
+#define LWIP_DEBUG
+#define ETHARP_DEBUG LWIP_DBG_ON
+#define TIMERS_DEBUG LWIP_DBG_ON
 
-/**
- * NO_SYS==1: Provides VERY minimal functionality. Otherwise,
- * use lwIP facilities.
- */
-#define NO_SYS                  1
+// NO_SYS provides minimal functionality. This is the suitable option of bare-metal applications. NO_SYS removes 
+// functionality like using the system timers, threads, mutexes, and memory management etc.
+#define NO_SYS 1
+
+// LWIP_STATS turns on functionality to collect statistics from modules within LwIP for debugging and profiling.
+#define LWIP_STATS 0
+
+// Netconn is one of LwIP APIs. It is not available for bare-metal applications.
+#define LWIP_NETCONN 0
+
+// Socket is one of LwIP APIs. It is not available for bare-metal applications.
+#define LWIP_SOCKET 0
+
+// Enable LwIP modules.
+#define LWIP_ICMP 1
+#define LWIP_DHCP 1
+#define LWIP_IPV4 1
+#define LWIP_ARP 1
+#define LWIP_ETHERNET 1
+
+// SYS_LIGHTWEIGHT_PROT refers to inter-task protection for certain critical memory regions during memory allocation & 
+// deallocation.
+#define SYS_LIGHTWEIGHT_PROT 0
+
+/*****************************************************************************/
+/********** MEMORY OPTIONS ***************************************************/
+/*****************************************************************************/
 
 /* ---------- Memory options ---------- */
 /* MEM_ALIGNMENT: should be set to the alignment of the CPU for which
@@ -88,18 +78,15 @@ a lot of data that needs to be copied, this should be set high. */
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool */
 #define PBUF_POOL_BUFSIZE       1528
 
-/* LWIP_SUPPORT_CUSTOM_PBUF == 1: to pass directly MAC Rx buffers to the stack 
-   no copy is needed */
-#define LWIP_SUPPORT_CUSTOM_PBUF      1
+// Support custom PBUF's to pass directly MAC Rx buffers to the stack no copy is needed.
+#define LWIP_SUPPORT_CUSTOM_PBUF 1
 
-/*
-   ------------------------------------------------
-   ---------- Network Interfaces options ----------
-   ------------------------------------------------
-*/
 #define LWIP_NETIF_LINK_CALLBACK        1
 
-/* ---------- TCP options ---------- */
+/*****************************************************************************/
+/********** TCP & UDP OPTIONS ************************************************/
+/*****************************************************************************/
+
 #define LWIP_TCP                1
 #define TCP_TTL                 255
 
@@ -120,28 +107,13 @@ a lot of data that needs to be copied, this should be set high. */
 /* TCP receive window. */
 #define TCP_WND                 (2*TCP_MSS)
 
-
-/* ---------- ICMP options ---------- */
-#define LWIP_ICMP                       1
-
-
-/* ---------- DHCP options ---------- */
-#define LWIP_DHCP               1
-
-
 /* ---------- UDP options ---------- */
 #define LWIP_UDP                1
 #define UDP_TTL                 255
 
-
-/* ---------- Statistics options ---------- */
-#define LWIP_STATS 0
-
-/*
-   --------------------------------------
-   ---------- Checksum options ----------
-   --------------------------------------
-*/
+/*****************************************************************************/
+/********** CHECKSUM OPTIONS *************************************************/
+/*****************************************************************************/
 
 /* 
 The STM32H7xx allows computing and verifying the IP, UDP, TCP and ICMP checksums by hardware:
@@ -188,27 +160,4 @@ The STM32H7xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
   #define CHECKSUM_CHECK_ICMP             1
 #endif
 
-
-/*
-   ----------------------------------------------
-   ---------- Sequential layer options ----------
-   ----------------------------------------------
-*/
-/**
- * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
- */
-#define LWIP_NETCONN                    0
-
-/*
-   ------------------------------------
-   ---------- Socket options ----------
-   ------------------------------------
-*/
-/**
- * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
- */
-#define LWIP_SOCKET                     0
-
-#endif /* __LWIPOPTS_H__ */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+#endif // LWIPOPTS_H
