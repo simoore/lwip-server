@@ -28,7 +28,7 @@ public:
     /// The status of a connection.
     enum class ConnectionState {
         Closed,         ///< If the connection is closed and dealocated.
-        Listening,      ///< The connection is listenign for new connections.
+        Listening,      ///< The connection is listening for new connections.
         Established,    ///< If the connection is established and ready for write and read.
         Closing         ///< If the connection has been signaled to close but is waiting to finish some tasks.
     };
@@ -204,8 +204,14 @@ private:
 
     /// The maximum number of simultaneous connections this server accepts.
     static constexpr uint32_t sMaxConnections{10};
+
+    /// The LwIP connection that listens for new TCP connections.
     TcpConnection mListeningConnection;
+
+    /// The list of established connections.
     etl::list<TcpConnection, sMaxConnections> mConnections;
+
+    /// Callback to return data to the higher level protocol layer.
     RecvCallback mRecvCallback;
 
 }; // class TcpServer

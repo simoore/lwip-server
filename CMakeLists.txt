@@ -30,6 +30,7 @@ set(WRN_OPTIONS -Wall -Werror)
 set(STM32H7_SOURCES
     src/Main.cpp
     src/Network.cpp
+    src/TcpServer.cpp
     src/stm32h7-base/ethernetif.c
     src/stm32h7-base/lan8742.c
     src/stm32h7-base/stm32h7_startup.cpp
@@ -38,9 +39,9 @@ set(STM32H7_SOURCES
     src/stm32h7-base/stm32h7_interrupts.cpp
     src/stm32h7-base/stm32h7_debug_uart.cpp
     src/stm32h7-base/Stm32h7Base.cpp
+    src/stm32h7-base/arch/sio.cpp
     src/utils/DmaRxBuffer.cpp
     src/utils/DmaTxBuffer.cpp
-    src/stm32h7-base/arch/sio.cpp
     ${lwipnoapps_SRCS}
     ${HAL_DIR}/Src/stm32h7xx_hal.c
     ${HAL_DIR}/Src/stm32h7xx_hal_cortex.c

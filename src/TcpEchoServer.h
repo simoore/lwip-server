@@ -22,8 +22,8 @@ public:
     /// Allows this server to be bound to any IP address that is assigned to this device, along with a port number that
     /// refers to this echo server. Then a callback to receive data is registered with the server.
     void init() {
+        mTcpServer.registerRecvCallback(TcpServer::RecvCallback::create<TcpEchoServer, &TcpEchoServer::recv>(*this));
         mTcpServer.init(IP_ADDR_ANY, sPort);
-        mTcpServer.registerRecvCallback(TcpServer::RecvCallback::create<TcpEchoServer, TcpEchoServer::recv>(*this));
     }
 
     /// Handles received data from the TCP server.

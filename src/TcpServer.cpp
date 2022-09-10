@@ -7,14 +7,14 @@
 
 void TcpServer::init(const ip_addr_t *ipAddr, uint16_t port) {
     if (mListeningConnection.state != ConnectionState::Closed) {
-        printf("TcpServer::init, TcpServer already listening.");
+        printf("TcpServer::init, TcpServer already listening.\n");
         return;
     }
 
     mListeningConnection.server = this;
     mListeningConnection.controlBlock = tcp_new();
     if (!mListeningConnection.controlBlock) {
-        printf("TcpServer::init, Failed to allocate TCP control block.");
+        printf("TcpServer::init, Failed to allocate TCP control block.\n");
         return;   
     }
     
@@ -22,7 +22,7 @@ void TcpServer::init(const ip_addr_t *ipAddr, uint16_t port) {
     // is not closed.
     err_t err = tcp_bind(mListeningConnection.controlBlock, ipAddr, port);
     if (err != ERR_OK) {
-        printf("TcpServer::init, Failed to bind IP Address and Port, %s", lwip_strerr(err));
+        printf("TcpServer::init, Failed to bind IP Address and Port, %s\n", lwip_strerr(err));
         close(mListeningConnection);
         return;
     }
@@ -36,15 +36,15 @@ void TcpServer::init(const ip_addr_t *ipAddr, uint16_t port) {
 
 void TcpServer::write(TcpConnection &connection, PacketBuffer *pbuf) {
     if (connection.state != ConnectionState::Established) {
-        printf("TcpConnection::write, connection not established.");
+        printf("TcpConnection::write, connection not established.\n");
         return;
     }
     if (!pbuf) {
-        printf("TcpConnection::write, pbuf is null.");
+        printf("TcpConnection::write, pbuf is null.\n");
         return;
     }
     if (pbuf->tot_len == 0) {
-        printf("TcpConnection::write, data is empty.");
+        printf("TcpConnection::write, data is empty.\n");
         return;
     }
 
@@ -88,58 +88,51 @@ void TcpServer::writeToTcp(TcpConnection &connection) {
     // Enqueue data for transmission. The while loop cycles through the chained pbuf.
     while (true) {
 
-        // Check how much room is in the TCP buffers.
-        uint16_t available = tcp_sndbuf(connection.controlBlock);
-        if (available == 0) {
-            printf("TcpServer::writeToTcp, no room to write to TCP stack.");
-            break;
-        }
-
         // Sometimes this function is called when all data has been sent. Just return.
         if (!connection.writeBuffer) {
-            printf("TcpServer::writeToTcp, no data to write.");
+            printf("TcpServer::writeToTcp, no data to write.\n");
             break;
         }
 
         // In each iteration of this loop, we will only try and send the data from the leading pbuf in the chain.
         PacketBuffer &pbuf = *connection.writeBuffer;
-        uint16_t pbufLen = pbuf.len - connection.writeOffset;
 
-        // If all the data in the leading pbuf has been sent, free it and move to the next pbuf in the chain.
-        if (pbufLen == 0) {
-            connection.writeBuffer = pbuf.next;
-            // https://programming.vip/docs/lwip-pbuf-of-tcp-ip-protocol-stack.html
-            // This site has some nice diagrams explaining pbuf_ref() and pbuf_free().
-            if (connection.writeBuffer) {
-                pbuf_ref(connection.writeBuffer);
-            }
-            connection.writeOffset = 0;
-            uint8_t freed = pbuf_free(&pbuf);
-            if (freed != 1) {
-                printf("TcpServer::writeToTcp, %d pbufs were freed.", freed);
-            }
-            continue;
+        // Check how much room is in the TCP buffers.
+        uint16_t available = tcp_sndbuf(connection.controlBlock);
+        if (available < pbuf.len) {
+            printf("TcpServer::writeToTcp, no room to write to TCP stack.\n");
+            break;
         }
 
         // Copy the data into the TCP send buffers.
-        uint16_t len = std::max(pbufLen, available);
-        uint8_t *data = reinterpret_cast<uint8_t *>(pbuf.payload) + connection.writeOffset;
-        err_t err = tcp_write(connection.controlBlock, data, len, TCP_WRITE_FLAG_COPY);
+        uint8_t *data = reinterpret_cast<uint8_t *>(pbuf.payload);
+        err_t err = tcp_write(connection.controlBlock, data, pbuf.len, TCP_WRITE_FLAG_COPY);
         if (err == ERR_MEM) {
-            printf("TcpConnection::writeToTcp, LwIP ERR_MEM.");
+            printf("TcpConnection::writeToTcp, LwIP ERR_MEM.\n");
             break;
         }
         if (err != ERR_OK) {
-            printf("TcpConnection::writeToTcp, tcp_write not ok.");
+            printf("TcpConnection::writeToTcp, tcp_write not ok.\n");
             break;
         }
-        connection.writeOffset += len;
+
+        // If all the data in the leading pbuf has been sent, free it and move to the next pbuf in the chain.
+        connection.writeBuffer = pbuf.next;
+        // https://programming.vip/docs/lwip-pbuf-of-tcp-ip-protocol-stack.html
+        // This site has some nice diagrams explaining pbuf_ref() and pbuf_free().
+        if (connection.writeBuffer) {
+            pbuf_ref(connection.writeBuffer);
+        }
+        uint8_t freed = pbuf_free(&pbuf);
+        if (freed != 1) {
+            printf("TcpServer::writeToTcp, %d pbufs were freed.\n", freed);
+        }
     }
 
     // Forces LwIP to send data to lower network layer.
     //
     // https://lwip.fandom.com/wiki/Raw/TCP
-    // This isn't necessary when this function is called form the recv callback, but it may be necessary when
+    // This isn't necessary when this function is called from the recv callback, but it may be necessary when
     // writeToTcp() is called in other contexts.
     tcp_output(connection.controlBlock);
 }
@@ -147,9 +140,9 @@ void TcpServer::writeToTcp(TcpConnection &connection) {
 err_t TcpServer::accept(TcpControlBlock *newpcb, err_t err) {
 
     if (err != ERR_OK) {
-        printf("TcpServer::accept, err note ok.");
+        printf("TcpServer::accept, err note ok.\n");
     } else if (mConnections.full()) {
-        printf("TcpServer::accept, not able to allocate more connections.");
+        printf("TcpServer::accept, not able to allocate more connections.\n");
         err = ERR_MEM;
     }
 
@@ -244,7 +237,7 @@ void TcpServer::error(TcpConnection &connection) {
 
 err_t TcpServer::accept(void *arg, TcpControlBlock *newpcb, err_t err) {
     if (!arg) {
-        printf("TcpServer::accept, arg is null.");
+        printf("TcpServer::accept, arg is null.\n");
         tcp_abort(newpcb);
         return ERR_ABRT;
     }
@@ -254,13 +247,13 @@ err_t TcpServer::accept(void *arg, TcpControlBlock *newpcb, err_t err) {
 
 err_t TcpServer::recv(void *arg, TcpControlBlock *tpcb, PacketBuffer *p, err_t err) {
     if (!arg) {
-        printf("TcpServer::recv, arg is null.");
+        printf("TcpServer::recv, arg is null.\n");
         tcp_abort(tpcb);
         return ERR_ABRT;
     }
     TcpConnection *connection = reinterpret_cast<TcpConnection *>(arg);
     if (connection->controlBlock != tpcb) {
-        printf("TcpServer::recv, control block mismatch.");
+        printf("TcpServer::recv, control block mismatch.\n");
         tcp_abort(tpcb);
         return ERR_ABRT;
     }
@@ -269,13 +262,13 @@ err_t TcpServer::recv(void *arg, TcpControlBlock *tpcb, PacketBuffer *p, err_t e
 
 err_t TcpServer::sent(void *arg, TcpControlBlock *tpcb, uint16_t len) {
     if (!arg) {
-        printf("TcpServer::sent, arg is null.");
+        printf("TcpServer::sent, arg is null.\n");
         tcp_abort(tpcb);
         return ERR_ABRT;
     }
     TcpConnection *connection = reinterpret_cast<TcpConnection *>(arg);
     if (connection->controlBlock != tpcb) {
-        printf("TcpServer::sent, control block mismatch.");
+        printf("TcpServer::sent, control block mismatch.\n");
         tcp_abort(tpcb);
         return ERR_ABRT;
     }
@@ -284,13 +277,13 @@ err_t TcpServer::sent(void *arg, TcpControlBlock *tpcb, uint16_t len) {
 
 err_t TcpServer::poll(void *arg, TcpControlBlock *tpcb) {
     if (!arg) {
-        printf("TcpServer::poll, arg is null.");
+        printf("TcpServer::poll, arg is null.\n");
         tcp_abort(tpcb);
         return ERR_ABRT;
     }
     TcpConnection *connection = reinterpret_cast<TcpConnection *>(arg);
     if (connection->controlBlock != tpcb) {
-        printf("TcpServer::poll, control block mismatch.");
+        printf("TcpServer::poll, control block mismatch.\n");
         tcp_abort(tpcb);
         return ERR_ABRT;
     }
@@ -300,7 +293,7 @@ err_t TcpServer::poll(void *arg, TcpControlBlock *tpcb) {
 void TcpServer::error(void *arg, err_t err) {
     static_cast<void>(err);
     if (!arg) {
-        printf("TcpServer::error, arg is null.");
+        printf("TcpServer::error, arg is null.\n");
         return;
     }
     TcpConnection *connection = reinterpret_cast<TcpConnection *>(arg);

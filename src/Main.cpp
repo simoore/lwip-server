@@ -1,12 +1,11 @@
 #include "Network.h"
 #include "Stm32h7Base.h"
-//#include "TcpEchoServer.h"
+#include "TcpEchoServer.h"
 #include <cstdio>
 
 Stm32h7Base sStm32h7Base;
 Network sNetwork{sStm32h7Base};
-
-// TcpEchoServer sTcpEchoServer;
+TcpEchoServer sTcpEchoServer;
 
 static constexpr uint32_t sHeartbeatInterval{2000};
 static uint32_t sLastHeartbeatTick{0};
@@ -26,7 +25,7 @@ void askForName() {
 int main() {
     sStm32h7Base.init();
     sNetwork.init();
-    //sTcpEchoServer.init();
+    sTcpEchoServer.init();
     while (true) {
         if (sLastHeartbeatTick < (sStm32h7Base.tick() - sHeartbeatInterval)) {
             sLastHeartbeatTick = sStm32h7Base.tick();
