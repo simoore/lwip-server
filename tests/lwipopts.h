@@ -41,7 +41,7 @@
 #define TCP_CHECKSUM_ON_COPY_SANITY_CHECK_FAIL(printfmsg) LWIP_ASSERT("TCP_CHECKSUM_ON_COPY_SANITY_CHECK_FAIL", 0)
 
 /* We link to special sys_arch.c (for basic non-waiting API layers unit tests) */
-#define NO_SYS                          0
+#define NO_SYS                          1
 #define SYS_LIGHTWEIGHT_PROT            0
 #define LWIP_NETCONN                    !NO_SYS
 #define LWIP_SOCKET                     !NO_SYS

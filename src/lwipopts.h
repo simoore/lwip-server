@@ -1,1 +1,0 @@
-#include "stm32h7_lwipopts.h"

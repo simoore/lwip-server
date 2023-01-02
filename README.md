@@ -6,18 +6,24 @@
 
 ## Building Projects with CMake
 
-For the STM32H7 application, build
+To build the STM32H7 application and the unit tests:
+
 ```bash
-mkdir build
-cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-none-eabi.cmake -G "Unix Makefiles"
+mkdir build-stm32h7-debug
+mkdir build-tests
+cd build-stm32h7-debug
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-none-eabi.cmake -G "Unix Makefiles"
+make
+cd ../build-tests
+cmake .. -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles"
 make
 ```
 
-After the first build, any changes to the 
+The build type and toolchain are cached after the first build. Any changes to the cmake project only requires the
+following commands to build:
 
 ```bash
-cd build
+cd build-stm32h7-debug
 cmake ..
 make
 ```
@@ -30,6 +36,7 @@ make
 * `main` in the startup script needs to be called via assembly because the compiler does not allow direct calls to main
     in cpp.
 * IP Address 192.168.x.x have been assigned for private networks and is used in this project.
+* Due to many small incompatibilies between MSYS2 and the windows environment, I should learn powershell for automation.
 
 ## Network Troubleshooting
 
@@ -82,14 +89,14 @@ can include:
 
 * Determine the HSE, CSI, HSI values.
 * Unit test DMA buffer classes, I'm sure at least the TX one has a bug in it.
-* Build unit tests and arm binary at the same time using two cmake projects.
-* See if we can ping the STM32H7 device
 * Move stack and functions and application data to DTCMEM & ITCMEM
-* Investigate industrial protocols: EtherNet/IP, ControlNet, DeviceNet, Modbus, Profibus, EtherCAT and CC-Link
-* Exmaine COAP and any protocols in ROS that would be suitbable for a real-time device.
+* Investigate industrial protocols: EtherNet/IP - other possibilites: ControlNet, DeviceNet, Modbus, Profibus, 
+    EtherCAT and CC-Link
 * Make sure MPU region size and the LWIP RAM size are the same.
 * Allow _write to always use DMA by servicing the debug uart in the _read while loop.
 * Figure out where the 8Mhz HSE clock comes from on the board schematic (does it come from the STLINK processor?)
+* Re-write more optimal ethernet driver
+* Get a working MQTT client.
 
 ## References
 

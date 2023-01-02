@@ -1,5 +1,5 @@
 #include "Stm32h7Base.h"
-#include "stm32h7_lwipopts.h"
+#include "lwipopts.h"
 
 /// Here we use the MPU for three purposes:
 /// 1) ...
