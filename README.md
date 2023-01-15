@@ -12,11 +12,11 @@ To build the STM32H7 application and the unit tests:
 mkdir build-stm32h7-debug
 mkdir build-tests
 cd build-stm32h7-debug
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-none-eabi.cmake -G "Unix Makefiles"
-make
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-none-eabi.cmake -G Ninja
+ninja
 cd ../build-tests
-cmake .. -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles"
-make
+cmake .. -DCMAKE_BUILD_TYPE=Debug -G Ninja
+ninja
 ```
 
 The build type and toolchain are cached after the first build. Any changes to the cmake project only requires the
@@ -25,8 +25,12 @@ following commands to build:
 ```bash
 cd build-stm32h7-debug
 cmake ..
-make
+ninja
 ```
+
+* With MSYS2, make sure you use the mingw version of cmake since the compilers generate windows paths for dependancies.
+* `ninja -v` executes ninja with the verbose option to see the what commands it is actually executing. You can also 
+  use `cmake --build .`.
 
 ## Notes
 
@@ -51,6 +55,11 @@ make
 * MAC address ff:ff:ff:ff:ff:ff is a broadcast.
 * Don't use cacheing for the ethernet DMA buffers. You can use the address of LwIP's heap from lwipopts.h in the 
     configuration of the MPU.
+
+## Debug Serial Connection
+
+Connect to the STM32 Programmer virtual serial port with baud 1500000. Set newlines to LF rather than CR if that is a 
+setting for correct display.
 
 ## Using `objdump`
 
@@ -85,6 +94,16 @@ can include:
     is using an operating system. For bare metal, this isn't required.
 * `cc.h`: Contains settings related to machine architecture and compiler in use.
 
+## MQTT Broker: Mosquito
+
+I'm using MSYS2. I installed the following version of mosquitto for the MQTT broker.
+
+```bash
+pacman -S mingw-w64-x86_64-mosquitto
+```
+
+
+
 ## TODO: 
 
 * Determine the HSE, CSI, HSI values.
@@ -97,10 +116,13 @@ can include:
 * Figure out where the 8Mhz HSE clock comes from on the board schematic (does it come from the STLINK processor?)
 * Re-write more optimal ethernet driver
 * Get a working MQTT client.
+* Use static polymorphism for interfaces and figure out how to keep compile times to a minimum.
+* Measure performance rather just assume what has good performance.
+* MQTT broker not authorizing my client.
 
 ## References
 
-* [launch.json Exmamples for Cortex Debugging](https://github.com/haneefdm/cortex-debug-samples/blob/master/blink2/.vscode/launch.json)
+* [launch.json Examples for Cortex Debugging](https://github.com/haneefdm/cortex-debug-samples/blob/master/blink2/.vscode/launch.json)
 
 ### Newlib syscalls to support printf() an scanf()
 
@@ -129,3 +151,8 @@ can include:
 ### MQTT
 
 * [MQTT: The Standard for IoT Messaging](https://mqtt.org/)
+* [MQTT with LwIP Example](https://www.nongnu.org/lwip/2_0_x/group__mqtt.html)
+
+### CMake
+
+* [How to manage multiple build configurations with cmake](https://stackoverflow.com/questions/57689789/how-to-manage-multiple-build-configurations-with-cmake)

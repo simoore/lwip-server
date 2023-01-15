@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.20)
 project(stm32h7-lwip-server LANGUAGES C CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE on)
-set(CMAKE_DEPENDS_USE_COMPILER FALSE)
+set(BUILD_SHARED_LIBS off)
 
 # Library directories
 set(DEVLIBDIR $ENV{DEVDIRLIB})
@@ -10,8 +10,6 @@ set(HAL_DIR ${DEVLIBDIR}/STM32H7xx_HAL_Driver)
 set(CMSIS_DIR ${DEVLIBDIR}/CMSIS)
 set(LWIP_DIR ${DEVLIBDIR}/lwip)
 set(ETL_DIR ${DEVLIBDIR}/etl-master)
-include(${LWIP_DIR}/src/Filelists.cmake)
-
 
 if (CMAKE_SYSTEM_NAME MATCHES "Generic")
 
@@ -29,9 +27,17 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
     set(DBG_OPTIONS $<$<CONFIG:Debug>:-Og -g -gdwarf-2>)
     set(CPP_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 -fno-rtti>)
     set(WRN_OPTIONS -Wall -Werror)
+    set(ALL_OPTIONS ${MCU_OPTIONS} ${OPT_OPTIONS} ${DBG_OPTIONS} ${CPP_OPTIONS} 
+        ${WRN_OPTIONS} -fdiagnostics-color=always
+    )
+
+    set(LWIP_INCLUDE_DIRS ${LWIP_DIR}/src/include src/stm32h7-base/)
+    #set(LWIP_DEFINITIONS LWIP_DEBUG=1)
+    set(LWIP_COMPILER_FLAGS ${ALL_OPTIONS})
 
     set(STM32H7_SOURCES
         src/Main.cpp
+        src/MqttClient.cpp
         src/Network.cpp
         src/TcpServer.cpp
         src/stm32h7-base/ethernetif.c
@@ -45,7 +51,6 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
         src/stm32h7-base/arch/sio.cpp
         src/utils/DmaRxBuffer.cpp
         src/utils/DmaTxBuffer.cpp
-        ${lwipnoapps_SRCS}
         ${HAL_DIR}/Src/stm32h7xx_hal.c
         ${HAL_DIR}/Src/stm32h7xx_hal_cortex.c
         ${HAL_DIR}/Src/stm32h7xx_hal_dma.c
@@ -68,6 +73,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
     add_executable(${CMAKE_PROJECT_NAME} ${STM32H7_SOURCES})
     set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} SUFFIX ".elf")
     target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE USE_HAL_DRIVER STM32H743xx)
+    target_link_libraries(${CMAKE_PROJECT_NAME} lwipcore lwipallapps)
     target_link_libraries(${CMAKE_PROJECT_NAME} c m nosys stdc++)
 
     target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE 
@@ -80,12 +86,10 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
         ${CMSIS_DIR}/Device/ST/STM32H7xx/Include
         ${CMSIS_DIR}/Include
         ${ETL_DIR}/include
-        ${LWIP_DIR}/src/include
+        ${LWIP_INCLUDE_DIRS}
     )
 
-    target_compile_options(${PROJECT_NAME} PRIVATE ${MCU_OPTIONS} ${OPT_OPTIONS} ${DBG_OPTIONS} ${CPP_OPTIONS} 
-        ${WRN_OPTIONS} -fdiagnostics-color=always
-    )
+    target_compile_options(${PROJECT_NAME} PRIVATE ${ALL_OPTIONS})
 
     target_link_options(${PROJECT_NAME} PRIVATE -T${MCU_LINKER_SCRIPT} ${MCU_OPTIONS}
         -specs=nosys.specs
@@ -149,3 +153,5 @@ else()
     target_link_options(unittests PRIVATE "-fsanitize=address -static-libasan")
 
 endif()
+
+include(${LWIP_DIR}/src/Filelists.cmake)

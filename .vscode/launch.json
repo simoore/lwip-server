@@ -27,8 +27,8 @@
             ],
         },
         {
-            "cwd": "${workspaceRoot}/build",
-            "executable": "${workspaceRoot}/build/stm32h7-lwip-server.elf",
+            "cwd": "${workspaceRoot}/build-stm32h7-debug",
+            "executable": "${workspaceRoot}/build-stm32h7-debug/stm32h7-lwip-server.elf",
             "name": "Debug STM32H7 LwIP Server",
             "request": "launch",
             "type": "cortex-debug",

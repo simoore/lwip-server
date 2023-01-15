@@ -12,6 +12,8 @@
       }
     }
   },
+  "cmake.configureOnOpen": false,
+  "cmake.configureOnEdit": false,
   "files.associations": {
     "iostream": "cpp",
     "rope": "cpp",
