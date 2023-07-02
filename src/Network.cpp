@@ -1,7 +1,8 @@
+#include "Network.h"
 #include "etl/delegate.h"
 #include "lwip/init.h"
 #include "lwip/timeouts.h"
-#include "Network.h"
+#include "task.h"
 
 /*************************************************************************/
 /********** PUBLIC FUNCTIONS *********************************************/
@@ -12,28 +13,46 @@ void Network::init() {
     // TODO: pass in callback in init.
     mInterface.registerLinkCallback(LinkCallback::create<Network, &Network::linkStatusUpdated>(*this));
     mInterface.init();
+
+    if constexpr (sUsingRTOS) {
+        if constexpr (sUsingLinkCallback) {
+            auto status = xTaskCreate(Network::checkLinkThread, "CheckLinkTask", sCheckLinkTaskStackSize, this, 
+                PRIORITY_NORMAL, nullptr);
+            if (status == pdFAIL) {
+                while (true);
+            }
+        }
+
+        if constexpr (sUsingDHCP) {
+            auto status = xTaskCreate(Network::dhcpThread, "DHCPTask", sDhcpTaskStackSize, this, 
+                PRIORITY_BELOW_NORMAL, nullptr);
+            if (status == pdFAIL) {
+                while (true);
+            }
+        }
+    }
 }
 
 void Network::service() {
     mInterface.service();
     sys_check_timeouts();
-    
+
     // Check status of link periodically.
     uint32_t now = mBase.tick();
-    #if LWIP_NETIF_LINK_CALLBACK
-    if ((now - mLinkTimer) >= sLinkTimerPeriod_ms) {
-        mLinkTimer = now;
-        mInterface.checkLinkState();
+    if constexpr (sUsingLinkCallback) {
+        if ((now - mLinkTimer) >= sLinkTimerPeriod_ms) {
+            mLinkTimer = now;
+            mInterface.checkLinkState();
+        }
     }
-    #endif
 
     // Execute DHCP process periodically.
-    #if LWIP_DHCP
-    if ((now - mDhcpTimer) >= sDhcpTimerPeriod_ms) {
-        mDhcpTimer = now;
-        dhcpProcess();
+    if constexpr (sUsingDHCP) {
+        if ((now - mDhcpTimer) >= sDhcpTimerPeriod_ms) {
+            mDhcpTimer = now;
+            dhcpProcess();
+        }
     }
-    #endif
 }
 
 /*************************************************************************/
@@ -65,7 +84,7 @@ void Network::dhcpProcess() {
             // DHCP timeout - use static IP address.
             mDhcpState = DhcpState::Timeout;
             mInterface.setStaticIp();
-            printf("NetworkManager::dhcpProcess, DHCP timeout, using static IP %s\n", mInterface.ipAddrStr());    
+            printf("NetworkManager::dhcpProcess, DHCP timeout, using static IP %s\n", mInterface.ipAddrStr());
         }
         break;
     case DhcpState::LinkDown:
@@ -75,4 +94,29 @@ void Network::dhcpProcess() {
     default:
         break;
     }
+}
+
+/*************************************************************************/
+/********** RTOS THREADS *************************************************/
+/*************************************************************************/
+
+void Network::checkLinkThread(void *args) {
+    Network &network = *reinterpret_cast<Network *>(args);
+    while (true) {
+        network.dhcpProcess();
+        vTaskDelay(pdMS_TO_TICKS(sDhcpTimerPeriod_ms));
+    }
+
+    // If for some reason the task breaks out of its loop, it must be deleted. The nullptr indicates that this
+    // calling task is the one to be deleted.
+    vTaskDelete(nullptr);
+}
+
+void Network::dhcpThread(void *args) {
+    Network &network = *reinterpret_cast<Network *>(args);
+    while (true) {
+        network.mInterface.checkLinkState();
+        vTaskDelay(pdMS_TO_TICKS(sLinkTimerPeriod_ms));
+    }
+    vTaskDelete(nullptr);
 }

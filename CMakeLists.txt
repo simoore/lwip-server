@@ -5,7 +5,7 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 set(BUILD_SHARED_LIBS off)
 
 # Library directories
-set(DEVLIBDIR $ENV{DEVDIRLIB})
+set(DEVLIBDIR $ENV{DEVLIBDIR})
 set(HAL_DIR ${DEVLIBDIR}/STM32H7xx_HAL_Driver)
 set(CMSIS_DIR ${DEVLIBDIR}/CMSIS)
 set(LWIP_DIR ${DEVLIBDIR}/lwip)
@@ -122,13 +122,12 @@ else()
     # Unit Tests
     #
 
-    set(UNIT_TESTS_COMPILE_OPTIONS -g3 -fsanitize=address -fno-omit-frame-pointer)
+    set(UNIT_TESTS_COMPILE_OPTIONS -g3 -fno-omit-frame-pointer)
     set(UNIT_TESTS_CPP_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 -fno-rtti>)
+
+    set(LWIP_INCLUDE_DIRS ${LWIP_DIR}/src/include tests)
+    set(LWIP_COMPILER_FLAGS ${UNIT_TESTS_COMPILE_OPTIONS} ${UNIT_TESTS_CPP_OPTIONS})
     set(unittestsSources 
-        ${lwipcore_SRCS}
-        ${lwipcore4_SRCS}
-        ${lwipcore6_SRCS}
-        ${lwipapi_SRCS}
         ${LWIP_DIR}/src/netif/ethernet.c
         src/Lan8742.cpp
         tests/sys_arch.c
@@ -148,9 +147,9 @@ else()
     target_link_directories(unittests PRIVATE
         ${DEVLIBDIR}/googletest-release-1.11.0/build/lib
     )
-    target_link_libraries(unittests pthread gmock gtest)
+    target_link_libraries(unittests pthread gmock gtest lwipcore)
     target_compile_options(unittests PRIVATE ${UNIT_TESTS_COMPILE_OPTIONS} ${UNIT_TESTS_CPP_OPTIONS})
-    target_link_options(unittests PRIVATE "-fsanitize=address -static-libasan")
+    target_link_options(unittests PRIVATE -static-libasan -static-libgcc -static-libstdc++)
 
 endif()
 

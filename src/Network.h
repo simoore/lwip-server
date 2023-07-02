@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "EthernetifCpp.h"
 #include "IBase.h"
+#include "FreeRTOS.h"
 
 /// This class encaptulates initialization and servicing of LwIP TCP/IP stack and the ethernet interface.
 class Network {
@@ -21,6 +22,30 @@ public:
 
     /// The maximum number of tries to attain a IP address via DHCP.
     static constexpr uint32_t sMaxDhcpTries{2};
+
+    /// Compile time flag indicating to use FreeRTOS or bare-metal.
+    static constexpr bool sUsingRTOS{NO_SYS == 0};
+
+    /// Compile time flag inidicating use of DHCP.
+#ifdef LWIP_DHC
+    static constexpr bool sUsingDHCP{true};
+#else
+    static constexpr bool sUsingDHCP{false};
+#endif
+
+    /// Compile time flag inidicating use of link callback in ethernet driver.
+#if LWIP_NETIF_LINK_CALLBACK
+    static constexpr bool sUsingLinkCallback{true};
+#else
+    static constexpr bool sUsingLinkCallback{false};
+#endif
+
+    /// The size of the DCHP Task in words.
+    static constexpr uint32_t sDhcpTaskStackSize{2 * (configMINIMAL_STACK_SIZE)};
+
+    /// The size of the Check Link Task in words.
+    static constexpr uint32_t sCheckLinkTaskStackSize{2 * (configMINIMAL_STACK_SIZE)};
+
 
     /*************************************************************************/
     /********** PUBLIC TYPES *************************************************/
@@ -74,6 +99,18 @@ private:
     /// We monitor the status of the DHCP client to determine if we should attempt to attain an IP address using
     /// DHCP when the ethernet link is up, or if the DHCP has timed-out and we should apply a static IP.
     void dhcpProcess();
+
+    /// This is the thread launched to service DHCP process when using an RTOS.
+    ///
+    /// @param args
+    ///     This is the pointer to the network stack.
+    static void dhcpThread(void *args);
+
+    /// This is the thread launched to check the network interface link status.
+    ///
+    /// @param args
+    ///     This is the pointer to the network stack.
+    static void checkLinkThread(void *args);
 
     /*************************************************************************/
     /********** PRIVATE VARIABLES ********************************************/

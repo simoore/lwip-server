@@ -8,7 +8,7 @@
             "name": "Debug unit tests.",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/unittests.exe",
+            "program": "${workspaceRoot}/build-tests/unittests.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",

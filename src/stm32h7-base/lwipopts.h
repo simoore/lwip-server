@@ -1,5 +1,4 @@
-#ifndef LWIPOPTS_H
-#define LWIPOPTS_H
+#pragma once
 
 // Do not use LwIP profiling functions.
 #define LWIP_PERF 0
@@ -11,7 +10,7 @@
 
 // NO_SYS provides minimal functionality. This is the suitable option of bare-metal applications. NO_SYS removes 
 // functionality like using the system timers, threads, mutexes, and memory management etc.
-#define NO_SYS 1
+#define NO_SYS 0
 
 // LWIP_STATS turns on functionality to collect statistics from modules within LwIP for debugging and profiling.
 #define LWIP_STATS 0
@@ -159,5 +158,3 @@ The STM32H7xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
   /* CHECKSUM_CHECK_ICMP==1: Check checksums by hardware for incoming ICMP packets.*/
   #define CHECKSUM_CHECK_ICMP             1
 #endif
-
-#endif // LWIPOPTS_H

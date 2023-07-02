@@ -3,6 +3,7 @@
 ## Features
 
 * TCP echo server on port 7.
+* A real time clock that publishes on MQTT which synchronizes itself using SNTP.
 
 ## Building Projects with CMake
 
@@ -29,18 +30,17 @@ ninja
 ```
 
 * With MSYS2, make sure you use the mingw version of cmake since the compilers generate windows paths for dependancies.
-* `ninja -v` executes ninja with the verbose option to see the what commands it is actually executing. You can also 
-  use `cmake --build .`.
+* `ninja -v` executes ninja with the verbose option to see the what commands it is actually executing.
 
 ## Notes
 
-* Add ARM GCC toolchain bin to the path in ~/.bash_profile
 * Variables defined in linker script should be referred to as value types, the convention is char, and then referenced
     to get there memory address. <https://sourceware.org/binutils/docs/ld/Source-Code-Reference.html>
 * `main` in the startup script needs to be called via assembly because the compiler does not allow direct calls to main
     in cpp.
 * IP Address 192.168.x.x have been assigned for private networks and is used in this project.
-* Due to many small incompatibilies between MSYS2 and the windows environment, I should learn powershell for automation.
+* Due to many small incompatibilies between MSYS2 and the windows environment, stick with cmd or powershell on windows.
+* I had some dll not found issues in the unit tests. Statically linking eliminated these issues.
 
 ## Network Troubleshooting
 
@@ -96,29 +96,48 @@ can include:
 
 ## MQTT Broker: Mosquito
 
-I'm using MSYS2. I installed the following version of mosquitto for the MQTT broker.
+Using MSYS2, install the mosquitto for the MQTT broker:
 
 ```bash
 pacman -S mingw-w64-x86_64-mosquitto
 ```
 
+Create a broker config file `/etc/mosquitto/mosquitto.conf` and add the following lines:
 
+```
+allow_anonymous true
+listener 1883 192.168.112.11
+```
+
+These lines remove any authentication, and make the broker listen on only the IP address 192.168.112.11 which is the 
+address of the wired interface for the local network the STM32H7 device is connected to. Then you can launch the 
+broker:
+
+```bash
+mosquitto -v -c /etc/mosquitto/mosquitto.conf
+```
+
+When operating correctly, the lwip-server application should automatically connect to the broker and start publishing.
+You can see notifications for the connection and publication in the verbose output of mosquitto. You can see the 
+contents of the published packet using the mosquitto's sub client, for example the topic 'LwipServerClock':
+
+```bash
+mosquitto_sub -h 192.168.112.11 -t LwipServerClock
+```
 
 ## TODO: 
 
 * Determine the HSE, CSI, HSI values.
 * Unit test DMA buffer classes, I'm sure at least the TX one has a bug in it.
 * Move stack and functions and application data to DTCMEM & ITCMEM
-* Investigate industrial protocols: EtherNet/IP - other possibilites: ControlNet, DeviceNet, Modbus, Profibus, 
-    EtherCAT and CC-Link
 * Make sure MPU region size and the LWIP RAM size are the same.
 * Allow _write to always use DMA by servicing the debug uart in the _read while loop.
 * Figure out where the 8Mhz HSE clock comes from on the board schematic (does it come from the STLINK processor?)
 * Re-write more optimal ethernet driver
-* Get a working MQTT client.
-* Use static polymorphism for interfaces and figure out how to keep compile times to a minimum.
-* Measure performance rather just assume what has good performance.
-* MQTT broker not authorizing my client.
+* Write real-time clock.
+* Test MQTT subscriptions to set the clocks time.
+* Standard internet time synchronization protocol
+* Write bootloader
 
 ## References
 
@@ -129,7 +148,7 @@ pacman -S mingw-w64-x86_64-mosquitto
 * [From Zero to main(): Bootstrapping libc with Newlib](https://interrupt.memfault.com/blog/boostrapping-libc-with-newlib)
 * [How to Use printf on STM32](https://shawnhymel.com/1873/how-to-use-printf-on-stm32/)
 * [Howto: Porting newlib](https://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.html)
-* <https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f030R8/system/src/retarget/retarget.c>
+* [Example retarget](https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f030R8/system/src/retarget/retarget.c)
 
 ### Cache Coherency in STM32
 
@@ -152,7 +171,9 @@ pacman -S mingw-w64-x86_64-mosquitto
 
 * [MQTT: The Standard for IoT Messaging](https://mqtt.org/)
 * [MQTT with LwIP Example](https://www.nongnu.org/lwip/2_0_x/group__mqtt.html)
+* [Paho Python MQTT Client](http://www.steves-internet-guide.com/publishing-messages-mqtt-client/)
 
 ### CMake
 
 * [How to manage multiple build configurations with cmake](https://stackoverflow.com/questions/57689789/how-to-manage-multiple-build-configurations-with-cmake)
+* [An Introduction to Modern CMake](https://cliutils.gitlab.io/modern-cmake/)

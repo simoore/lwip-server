@@ -16,7 +16,9 @@
                 "${env:DEVLIBDIR}/LwIP/system",
                 "${env:DEVLIBDIR}/etl-master/include",
                 "${env:DEVLIBDIR}/googletest-release-1.11.0/googletest/include",
-                "${env:DEVLIBDIR}/googletest-release-1.11.0/googlemock/include"
+                "${env:DEVLIBDIR}/googletest-release-1.11.0/googlemock/include",
+                "${env:DEVLIBDIR}/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel/include",
+                "${env:DEVLIBDIR}/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel/portable/GCC/ARM_CM4F"
             ],
             "defines": [
                 "_DEBUG",
