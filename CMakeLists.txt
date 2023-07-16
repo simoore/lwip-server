@@ -10,6 +10,20 @@ set(HAL_DIR ${DEVLIBDIR}/STM32H7xx_HAL_Driver)
 set(CMSIS_DIR ${DEVLIBDIR}/CMSIS)
 set(LWIP_DIR ${DEVLIBDIR}/lwip)
 set(ETL_DIR ${DEVLIBDIR}/etl-master)
+set(FREERTOS_DIR ${DEVLIBDIR}/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel)
+
+include(${LWIP_DIR}/src/Filelists.cmake)
+
+add_library(lwip INTERFACE)
+target_sources(lwip INTERFACE 
+    ${lwipcore_SRCS}
+    ${lwipcore4_SRCS}
+    ${lwipapi_SRCS}
+    ${LWIP_DIR}/src/netif/ethernet.c
+    ${lwipmqtt_SRCS})
+target_include_directories(lwip INTERFACE ${LWIP_DIR}/src/include)
+target_compile_options(lwip INTERFACE ${ALL_OPTIONS})
+#target_compile_options(lwip INTERFACE LWIP_DEBUG=1)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Generic")
 
@@ -28,29 +42,10 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
     set(CPP_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 -fno-rtti>)
     set(WRN_OPTIONS -Wall -Werror)
     set(ALL_OPTIONS ${MCU_OPTIONS} ${OPT_OPTIONS} ${DBG_OPTIONS} ${CPP_OPTIONS} 
-        ${WRN_OPTIONS} -fdiagnostics-color=always
-    )
+        ${WRN_OPTIONS} -fdiagnostics-color=always)
 
-    set(LWIP_INCLUDE_DIRS ${LWIP_DIR}/src/include src/stm32h7-base/)
-    #set(LWIP_DEFINITIONS LWIP_DEBUG=1)
-    set(LWIP_COMPILER_FLAGS ${ALL_OPTIONS})
-
-    set(STM32H7_SOURCES
-        src/Main.cpp
-        src/MqttClient.cpp
-        src/Network.cpp
-        src/TcpServer.cpp
-        src/stm32h7-base/ethernetif.c
-        src/stm32h7-base/lan8742.c
-        src/stm32h7-base/stm32h7_startup.cpp
-        src/stm32h7-base/stm32h7_system.cpp
-        src/stm32h7-base/stm32h7_vectors.cpp
-        src/stm32h7-base/stm32h7_interrupts.cpp
-        src/stm32h7-base/stm32h7_debug_uart.cpp
-        src/stm32h7-base/Stm32h7Base.cpp
-        src/stm32h7-base/arch/sio.cpp
-        src/utils/DmaRxBuffer.cpp
-        src/utils/DmaTxBuffer.cpp
+    add_library(stm32h7hal INTERFACE)
+    target_sources(stm32h7hal INTERFACE
         ${HAL_DIR}/Src/stm32h7xx_hal.c
         ${HAL_DIR}/Src/stm32h7xx_hal_cortex.c
         ${HAL_DIR}/Src/stm32h7xx_hal_dma.c
@@ -67,48 +62,95 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
         ${HAL_DIR}/Src/stm32h7xx_hal_tim.c
         ${HAL_DIR}/Src/stm32h7xx_hal_tim_ex.c
         ${HAL_DIR}/Src/stm32h7xx_hal_uart.c
-        ${HAL_DIR}/Src/stm32h7xx_hal_uart_ex.c
-    )
-
-    add_executable(${CMAKE_PROJECT_NAME} ${STM32H7_SOURCES})
-    set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} SUFFIX ".elf")
-    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE USE_HAL_DRIVER STM32H743xx)
-    target_link_libraries(${CMAKE_PROJECT_NAME} lwipcore lwipallapps)
-    target_link_libraries(${CMAKE_PROJECT_NAME} c m nosys stdc++)
-
-    target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE 
-        src/
-        src/base/
-        src/stm32h7-base/
-        src/utils/
-        ${HAL_DIR}/Inc
+        ${HAL_DIR}/Src/stm32h7xx_hal_uart_ex.c)
+    target_include_directories(stm32h7hal INTERFACE 
+        src/stm32h7-base 
+        ${HAL_DIR}/Inc 
         ${HAL_DIR}/Inc/Legacy
         ${CMSIS_DIR}/Device/ST/STM32H7xx/Include
         ${CMSIS_DIR}/Include
-        ${ETL_DIR}/include
-        ${LWIP_INCLUDE_DIRS}
-    )
+        ${ETL_DIR}/include)
+    target_compile_definitions(stm32h7hal INTERFACE USE_HAL_DRIVER STM32H743xx)
+    target_compile_options(stm32h7hal INTERFACE ${ALL_OPTIONS})
 
-    target_compile_options(${PROJECT_NAME} PRIVATE ${ALL_OPTIONS})
+    add_library(freertos INTERFACE)
+    target_sources(freertos INTERFACE 
+        ${FREERTOS_DIR}/croutine.c
+        ${FREERTOS_DIR}/event_groups.c
+        ${FREERTOS_DIR}/list.c
+        ${FREERTOS_DIR}/queue.c
+        ${FREERTOS_DIR}/stream_buffer.c
+        ${FREERTOS_DIR}/tasks.c
+        ${FREERTOS_DIR}/timers.c
+        ${FREERTOS_DIR}/portable/GCC/ARM_CM4F/port.c
+        ${FREERTOS_DIR}/portable/MemMang/heap_4.c)
+    target_include_directories(freertos INTERFACE 
+        ${FREERTOS_DIR}/include
+        ${FREERTOS_DIR}/portable/GCC/ARM_CM4F)
 
-    target_link_options(${PROJECT_NAME} PRIVATE -T${MCU_LINKER_SCRIPT} ${MCU_OPTIONS}
+    add_library(lwip_baremetal INTERFACE)
+    target_include_directories(lwip_baremetal INTERFACE src/app-bare-metal)
+    target_link_libraries(lwip_baremetal INTERFACE lwip)
+
+    add_library(lwip_freertos INTERFACE)
+    target_sources(lwip_freertos INTERFACE ${LWIP_DIR}/contrib/ports/freertos/sys_arch.c)
+    target_include_directories(lwip_freertos INTERFACE src/app-freertos ${LWIP_DIR}/contrib/ports/freertos/include)
+    target_link_libraries(lwip_freertos INTERFACE lwip freertos)
+
+    add_library(common INTERFACE)
+    target_sources(common INTERFACE 
+        src/common/MqttClient.cpp 
+        src/common/TcpServer.cpp 
+        src/common/utils/DmaRxBuffer.cpp 
+        src/common/utils/DmaTxBuffer.cpp)
+    target_include_directories(common INTERFACE src/common)
+    target_link_libraries(common INTERFACE lwip)
+
+    add_library(stm32h7base INTERFACE)
+    target_sources(stm32h7base INTERFACE
+        src/stm32h7-base/lan8742.c
+        src/stm32h7-base/stm32h7_startup.cpp
+        src/stm32h7-base/stm32h7_system.cpp
+        src/stm32h7-base/stm32h7_vectors.cpp
+        src/stm32h7-base/stm32h7_interrupts.cpp
+        src/stm32h7-base/stm32h7_debug_uart.cpp
+        src/stm32h7-base/Stm32h7Base.cpp
+        src/stm32h7-base/arch/sio.cpp)
+    target_include_directories(stm32h7base INTERFACE src/stm32h7base src/base)
+    target_link_libraries(stm32h7base INTERFACE lwip)
+
+    set(COMMON_LIBS stm32h7base common stm32h7hal c m nosys stdc++)
+    set(COMMON_LINK_OPTS -T${MCU_LINKER_SCRIPT} ${MCU_OPTIONS}
         -specs=nosys.specs
         -Wl,-Map=${PROJECT_NAME}.map,--cref
-        -Wl,--print-memory-usage
-    )
+        -Wl,--print-memory-usage)
+
+    add_executable(lwip-server-baremetal
+        src/app-bare-metal/Interrupts.cpp
+        src/app-bare-metal/Main.cpp
+        src/app-bare-metal/Network.cpp
+        src/app-bare-metal/ethernetif.c)
+    target_link_libraries(lwip-server-baremetal lwip_baremetal ${COMMON_LIBS})
+    set_target_properties(lwip-server-baremetal PROPERTIES OUTPUT_NAME lwip-server-baremetal SUFFIX ".elf")
+    target_link_options(lwip-server-baremetal PRIVATE ${COMMON_LINK_OPTS})
+
+    add_executable(lwip-server-rtos
+        src/app-freertos/Interrupts.cpp
+        src/app-freertos/MainRTOS.cpp
+        src/app-freertos/NetworkRTOS.cpp
+        src/app-freertos/eth_freertos.cpp
+        src/app-freertos/timebase.cpp)
+    target_link_libraries(lwip-server-rtos PRIVATE lwip_freertos ${COMMON_LIBS})
+    set_target_properties(lwip-server-rtos PROPERTIES OUTPUT_NAME lwip-server-rtos SUFFIX ".elf")
+    target_link_options(lwip-server-rtos PRIVATE ${COMMON_LINK_OPTS})
 
     # Print executable size
-    add_custom_command(TARGET ${PROJECT_NAME}
+    add_custom_command(TARGET lwip-server-baremetal 
         POST_BUILD
-        COMMAND arm-none-eabi-size ${PROJECT_NAME}.elf
-    )
-
-    # Create hex file
-    add_custom_command(TARGET ${PROJECT_NAME}
+        COMMAND arm-none-eabi-size lwip-server-baremetal.elf)
+    add_custom_command(TARGET lwip-server-rtos
         POST_BUILD
-        COMMAND arm-none-eabi-objcopy -O ihex ${PROJECT_NAME}.elf ${PROJECT_NAME}.hex
-        COMMAND arm-none-eabi-objcopy -O binary ${PROJECT_NAME}.elf ${PROJECT_NAME}.bin
-    )
+        COMMAND arm-none-eabi-size lwip-server-rtos.elf)
 
     # Generate disassembly - this generally takes some time so we don't want to execute it all the time.
     # add_custom_command(TARGET ${PROJECT_NAME}
@@ -129,25 +171,22 @@ else()
     set(LWIP_COMPILER_FLAGS ${UNIT_TESTS_COMPILE_OPTIONS} ${UNIT_TESTS_CPP_OPTIONS})
     set(unittestsSources 
         ${LWIP_DIR}/src/netif/ethernet.c
-        src/Lan8742.cpp
+        src/common/drivers/Lan8742.cpp
         tests/sys_arch.c
         #tests/EthernetInterfaceTest.cpp
         tests/Lan8742Test.cpp
-        tests/Main.cpp
-    )
+        tests/Main.cpp)
     add_executable(unittests ${unittestsSources})
     target_include_directories(unittests PRIVATE
-        src/
+        src/common
         tests/
         ${DEVLIBDIR}/etl-master/include
         ${DEVLIBDIR}/lwip/src/include
         ${DEVLIBDIR}/googletest-release-1.11.0/googlemock/include 
-        ${DEVLIBDIR}/googletest-release-1.11.0/googletest/include 
-    )
+        ${DEVLIBDIR}/googletest-release-1.11.0/googletest/include)
     target_link_directories(unittests PRIVATE
-        ${DEVLIBDIR}/googletest-release-1.11.0/build/lib
-    )
-    target_link_libraries(unittests pthread gmock gtest lwipcore)
+        ${DEVLIBDIR}/googletest-release-1.11.0/build/lib)
+    target_link_libraries(unittests pthread gmock gtest lwip)
     target_compile_options(unittests PRIVATE ${UNIT_TESTS_COMPILE_OPTIONS} ${UNIT_TESTS_CPP_OPTIONS})
     target_link_options(unittests PRIVATE -static-libasan -static-libgcc -static-libstdc++)
 

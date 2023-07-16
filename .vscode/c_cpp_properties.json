@@ -3,10 +3,12 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/common",
+                "${workspaceFolder}/src/app-freertos",
+                "${workspaceFolder}/src/app-bare-metal",
                 "${workspaceFolder}/src/stm32h7-base",
-                "${workspaceFolder}/src/base",
-                "${workspaceFolder}/src/utils",
+                "${workspaceFolder}/src/common/base",
+                "${workspaceFolder}/src/common/utils",
                 "${workspaceFolder}/tests",
                 "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/inc",
                 "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/src",

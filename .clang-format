@@ -1,6 +1,9 @@
 ---
 AccessModifierOffset: -4
 AlignAfterOpenBracket: DontAlign
+AlignEscapedNewlines: Left
+AllowShortBlocksOnASingleLine: Empty 
+AllowShortFunctionsOnASingleLine: Empty
 AlwaysBreakTemplateDeclarations: true
 BreakBeforeBraces: Attach
 ColumnLimit: 120

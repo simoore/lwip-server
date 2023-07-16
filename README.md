@@ -132,12 +132,13 @@ mosquitto_sub -h 192.168.112.11 -t LwipServerClock
 * Move stack and functions and application data to DTCMEM & ITCMEM
 * Make sure MPU region size and the LWIP RAM size are the same.
 * Allow _write to always use DMA by servicing the debug uart in the _read while loop.
-* Figure out where the 8Mhz HSE clock comes from on the board schematic (does it come from the STLINK processor?)
 * Re-write more optimal ethernet driver
 * Write real-time clock.
 * Test MQTT subscriptions to set the clocks time.
 * Standard internet time synchronization protocol
 * Write bootloader
+* Use memory protection in FreeRTOS
+* conan package management
 
 ## References
 
