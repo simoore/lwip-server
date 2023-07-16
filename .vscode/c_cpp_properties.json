@@ -3,10 +3,12 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/common",
+                "${workspaceFolder}/src/app-freertos",
+                "${workspaceFolder}/src/app-bare-metal",
                 "${workspaceFolder}/src/stm32h7-base",
-                "${workspaceFolder}/src/base",
-                "${workspaceFolder}/src/utils",
+                "${workspaceFolder}/src/common/base",
+                "${workspaceFolder}/src/common/utils",
                 "${workspaceFolder}/tests",
                 "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/inc",
                 "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/src",
@@ -16,7 +18,9 @@
                 "${env:DEVLIBDIR}/LwIP/system",
                 "${env:DEVLIBDIR}/etl-master/include",
                 "${env:DEVLIBDIR}/googletest-release-1.11.0/googletest/include",
-                "${env:DEVLIBDIR}/googletest-release-1.11.0/googlemock/include"
+                "${env:DEVLIBDIR}/googletest-release-1.11.0/googlemock/include",
+                "${env:DEVLIBDIR}/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel/include",
+                "${env:DEVLIBDIR}/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel/portable/GCC/ARM_CM4F"
             ],
             "defines": [
                 "_DEBUG",

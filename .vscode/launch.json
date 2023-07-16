@@ -8,7 +8,7 @@
             "name": "Debug unit tests.",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/unittests.exe",
+            "program": "${workspaceRoot}/build-tests/unittests.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
@@ -28,17 +28,17 @@
         },
         {
             "cwd": "${workspaceRoot}/build-stm32h7-debug",
-            "executable": "${workspaceRoot}/build-stm32h7-debug/stm32h7-lwip-server.elf",
+            "executable": "${workspaceRoot}/build-stm32h7-debug/lwip-server-rtos.elf",
             "name": "Debug STM32H7 LwIP Server",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
             "svdFile": "${workspaceRoot}/STM32H743x.svd",
-            "runToMain": true,
+            "runToEntryPoint": "main",
             "configFiles": [
                 "board/st_nucleo_h743zi.cfg"
             ],
-            "showDevDebugOutput": false
+            "showDevDebugOutput": "vscode"
         }
     ]
 }

@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <cerrno>
 #include <unistd.h>
-#include "DmaRxBuffer.h"
-#include "DmaTxBuffer.h"
+#include "utils/DmaRxBuffer.h"
+#include "utils/DmaTxBuffer.h"
 #include "stm32h7xx_hal.h"
 
 /*************************************************************************/

@@ -1,5 +1,4 @@
-#ifndef LWIPOPTS_H
-#define LWIPOPTS_H
+#pragma once
 
 // Do not use LwIP profiling functions.
 #define LWIP_PERF 0
@@ -9,15 +8,8 @@
 #define ETHARP_DEBUG LWIP_DBG_ON
 #define TIMERS_DEBUG LWIP_DBG_ON
 
-// NO_SYS provides minimal functionality. This is the suitable option of bare-metal applications. NO_SYS removes 
-// functionality like using the system timers, threads, mutexes, and memory management etc.
-#define NO_SYS 1
-
 // LWIP_STATS turns on functionality to collect statistics from modules within LwIP for debugging and profiling.
 #define LWIP_STATS 0
-
-// Netconn is one of LwIP APIs. It is not available for bare-metal applications.
-#define LWIP_NETCONN 0
 
 // Socket is one of LwIP APIs. It is not available for bare-metal applications.
 #define LWIP_SOCKET 0
@@ -87,6 +79,7 @@ a lot of data that needs to be copied, this should be set high. */
 /********** TCP & UDP OPTIONS ************************************************/
 /*****************************************************************************/
 
+#define LWIP_UDP                1
 #define LWIP_TCP                1
 #define TCP_TTL                 255
 
@@ -108,7 +101,6 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_WND                 (2*TCP_MSS)
 
 /* ---------- UDP options ---------- */
-#define LWIP_UDP                1
 #define UDP_TTL                 255
 
 /*****************************************************************************/
@@ -121,43 +113,20 @@ The STM32H7xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
  - To disable it and process by CPU comment the  the checksum.
 */
 #define CHECKSUM_BY_HARDWARE 
-
-
-#ifdef CHECKSUM_BY_HARDWARE
-  /* CHECKSUM_GEN_IP==0: Generate checksums by hardware for outgoing IP packets.*/
-  #define CHECKSUM_GEN_IP                 0
-  /* CHECKSUM_GEN_UDP==0: Generate checksums by hardware for outgoing UDP packets.*/
-  #define CHECKSUM_GEN_UDP                0
-  /* CHECKSUM_GEN_TCP==0: Generate checksums by hardware for outgoing TCP packets.*/
-  #define CHECKSUM_GEN_TCP                0 
-  /* CHECKSUM_CHECK_IP==0: Check checksums by hardware for incoming IP packets.*/
-  #define CHECKSUM_CHECK_IP               0
-  /* CHECKSUM_CHECK_UDP==0: Check checksums by hardware for incoming UDP packets.*/
-  #define CHECKSUM_CHECK_UDP              0
-  /* CHECKSUM_CHECK_TCP==0: Check checksums by hardware for incoming TCP packets.*/
-  #define CHECKSUM_CHECK_TCP              0
-  /* CHECKSUM_GEN_ICMP==1: Check checksums by hardware for outgoing ICMP packets.*/
-  /* Hardware TCP/UDP checksum insertion not supported when packet is an IPv4 fragment*/
-  #define CHECKSUM_GEN_ICMP               1
-  /* CHECKSUM_CHECK_ICMP==0: Check checksums by hardware for incoming ICMP packets.*/
-  #define CHECKSUM_CHECK_ICMP             0
-#else
-  /* CHECKSUM_GEN_IP==1: Generate checksums in software for outgoing IP packets.*/
-  #define CHECKSUM_GEN_IP                 1
-  /* CHECKSUM_GEN_UDP==1: Generate checksums in software for outgoing UDP packets.*/
-  #define CHECKSUM_GEN_UDP                1
-  /* CHECKSUM_GEN_TCP==1: Generate checksums in software for outgoing TCP packets.*/
-  #define CHECKSUM_GEN_TCP                1
-  /* CHECKSUM_CHECK_IP==1: Check checksums in software for incoming IP packets.*/
-  #define CHECKSUM_CHECK_IP               1
-  /* CHECKSUM_CHECK_UDP==1: Check checksums in software for incoming UDP packets.*/
-  #define CHECKSUM_CHECK_UDP              1
-  /* CHECKSUM_CHECK_TCP==1: Check checksums in software for incoming TCP packets.*/
-  #define CHECKSUM_CHECK_TCP              1
-  /* CHECKSUM_GEN_ICMP==1: Check checksums by hardware for outgoing ICMP packets.*/
-  #define CHECKSUM_GEN_ICMP               1
-  /* CHECKSUM_CHECK_ICMP==1: Check checksums by hardware for incoming ICMP packets.*/
-  #define CHECKSUM_CHECK_ICMP             1
-#endif
-
-#endif // LWIPOPTS_H
+/* CHECKSUM_GEN_IP==0: Generate checksums by hardware for outgoing IP packets.*/
+#define CHECKSUM_GEN_IP                 0
+/* CHECKSUM_GEN_UDP==0: Generate checksums by hardware for outgoing UDP packets.*/
+#define CHECKSUM_GEN_UDP                0
+/* CHECKSUM_GEN_TCP==0: Generate checksums by hardware for outgoing TCP packets.*/
+#define CHECKSUM_GEN_TCP                0 
+/* CHECKSUM_CHECK_IP==0: Check checksums by hardware for incoming IP packets.*/
+#define CHECKSUM_CHECK_IP               0
+/* CHECKSUM_CHECK_UDP==0: Check checksums by hardware for incoming UDP packets.*/
+#define CHECKSUM_CHECK_UDP              0
+/* CHECKSUM_CHECK_TCP==0: Check checksums by hardware for incoming TCP packets.*/
+#define CHECKSUM_CHECK_TCP              0
+/* CHECKSUM_GEN_ICMP==1: Check checksums by hardware for outgoing ICMP packets.*/
+/* Hardware TCP/UDP checksum insertion not supported when packet is an IPv4 fragment*/
+#define CHECKSUM_GEN_ICMP               1
+/* CHECKSUM_CHECK_ICMP==0: Check checksums by hardware for incoming ICMP packets.*/
+#define CHECKSUM_CHECK_ICMP             0

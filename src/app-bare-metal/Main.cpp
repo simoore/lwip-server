@@ -1,4 +1,5 @@
 #include <cstdio>
+
 #include "Clock.h"
 #include "MqttClient.h"
 #include "Network.h"
@@ -32,6 +33,7 @@ int main() {
     sTcpEchoServer.init();
     sMqttClient.init(MqttClient::Config());
     sClock.init();
+   
     while (true) {
         if ((sLastHeartbeatTick + sHeartbeatInterval) < sStm32h7Base.tick()) {
             sLastHeartbeatTick = sStm32h7Base.tick();

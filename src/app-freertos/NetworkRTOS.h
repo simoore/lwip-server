@@ -2,8 +2,12 @@
 #define NETWORK_H
 
 #include <cstdint>
-#include "EthernetifCpp.h"
-#include "IBase.h"
+#include "eth_freertos.h"
+#include "base/IBase.h"
+#include "FreeRTOS.h"
+
+// Sort out EthernetifCpp interface for the RTOS version
+// Keep link check thread in this file
 
 /// This class encaptulates initialization and servicing of LwIP TCP/IP stack and the ethernet interface.
 class Network {
@@ -21,6 +25,26 @@ public:
 
     /// The maximum number of tries to attain a IP address via DHCP.
     static constexpr uint32_t sMaxDhcpTries{2};
+
+    /// Compile time flag inidicating use of DHCP.
+#ifdef LWIP_DHCP
+    static constexpr bool sUsingDHCP{true};
+#else
+    static constexpr bool sUsingDHCP{false};
+#endif
+
+    /// Compile time flag inidicating use of link callback in ethernet driver.
+#if LWIP_NETIF_LINK_CALLBACK
+    static constexpr bool sUsingLinkCallback{true};
+#else
+    static constexpr bool sUsingLinkCallback{false};
+#endif
+
+    /// The size of the DCHP Task in words.
+    static constexpr uint32_t sDhcpTaskStackSize = 2 * (configMINIMAL_STACK_SIZE);
+
+    /// The size of the Check Link Task in words.
+    static constexpr uint32_t sCheckLinkTaskStackSize = 2 * (configMINIMAL_STACK_SIZE);
 
     /*************************************************************************/
     /********** PUBLIC TYPES *************************************************/
@@ -54,12 +78,6 @@ public:
     ///     The configuration of the network stack.
     void init();
 
-    /// This is the main loop function that services the LwIP stack and the ethernet interface.
-    ///
-    /// When LwIP option NO_SYS=1, you must call the sys_check_timeouts() function in the main loop for the stack
-    /// to periodically check if and timers in LwIP have expired.
-    void service();
-
 private:
 
     /*************************************************************************/
@@ -75,6 +93,18 @@ private:
     /// DHCP when the ethernet link is up, or if the DHCP has timed-out and we should apply a static IP.
     void dhcpProcess();
 
+    /// This is the thread launched to check the network interface link status.
+    ///
+    /// @param args
+    ///     This is the pointer to the network stack.
+    static void checkLinkThread(void *args);
+
+    /// This is the thread launched to service DHCP process when using an RTOS.
+    ///
+    /// @param args
+    ///     This is the pointer to the network stack.
+    static void dhcpThread(void *args);
+
     /*************************************************************************/
     /********** PRIVATE VARIABLES ********************************************/
     /*************************************************************************/
@@ -83,13 +113,7 @@ private:
     IBase &mBase;
 
     /// The ethernet interface handler.
-    EthernetifCpp mInterface; 
-
-    /// Millisecond counts since we last checked the link state.
-    uint32_t mLinkTimer{0};    
-
-    /// Millisecond counts since we last executed the DHCP process. 
-    uint32_t mDhcpTimer{0};     
+    EthernetifCpp mInterface;  
 
     /// A state machine monitors the status of the DHCP client.
     DhcpState mDhcpState{DhcpState::LinkDown};

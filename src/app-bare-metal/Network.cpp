@@ -1,7 +1,7 @@
+#include "Network.h"
 #include "etl/delegate.h"
 #include "lwip/init.h"
 #include "lwip/timeouts.h"
-#include "Network.h"
 
 /*************************************************************************/
 /********** PUBLIC FUNCTIONS *********************************************/
@@ -17,23 +17,23 @@ void Network::init() {
 void Network::service() {
     mInterface.service();
     sys_check_timeouts();
-    
+
     // Check status of link periodically.
     uint32_t now = mBase.tick();
-    #if LWIP_NETIF_LINK_CALLBACK
-    if ((now - mLinkTimer) >= sLinkTimerPeriod_ms) {
-        mLinkTimer = now;
-        mInterface.checkLinkState();
+    if constexpr (sUsingLinkCallback) {
+        if ((now - mLinkTimer) >= sLinkTimerPeriod_ms) {
+            mLinkTimer = now;
+            mInterface.checkLinkState();
+        }
     }
-    #endif
 
     // Execute DHCP process periodically.
-    #if LWIP_DHCP
-    if ((now - mDhcpTimer) >= sDhcpTimerPeriod_ms) {
-        mDhcpTimer = now;
-        dhcpProcess();
+    if constexpr (sUsingDHCP) {
+        if ((now - mDhcpTimer) >= sDhcpTimerPeriod_ms) {
+            mDhcpTimer = now;
+            dhcpProcess();
+        }
     }
-    #endif
 }
 
 /*************************************************************************/
@@ -65,7 +65,7 @@ void Network::dhcpProcess() {
             // DHCP timeout - use static IP address.
             mDhcpState = DhcpState::Timeout;
             mInterface.setStaticIp();
-            printf("NetworkManager::dhcpProcess, DHCP timeout, using static IP %s\n", mInterface.ipAddrStr());    
+            printf("NetworkManager::dhcpProcess, DHCP timeout, using static IP %s\n", mInterface.ipAddrStr());
         }
         break;
     case DhcpState::LinkDown:
