@@ -1,0 +1,31 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "stm32h7-release",
+            "binaryDir": "${sourceDir}/build-stm32h7-release",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_TOOLCHAIN_FILE": "cmake/arm-none-eabi.cmake"
+            }
+        },
+        {
+            "name": "stm32h7-debug",
+            "binaryDir": "${sourceDir}/build-stm32h7-debug",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_TOOLCHAIN_FILE": "cmake/arm-none-eabi.cmake"
+            }
+        },
+        {
+            "name": "unit-tests",
+            "binaryDir": "${sourceDir}/build-unit-tests",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        }
+    ]
+}

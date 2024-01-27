@@ -3,24 +3,18 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/src/common",
-                "${workspaceFolder}/src/app-freertos",
-                "${workspaceFolder}/src/app-bare-metal",
-                "${workspaceFolder}/src/stm32h7-base",
-                "${workspaceFolder}/src/common/base",
-                "${workspaceFolder}/src/common/utils",
-                "${workspaceFolder}/tests",
-                "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/inc",
-                "${env:DEVLIBDIR}/STM32H7xx_HAL_Driver/src",
-                "${env:DEVLIBDIR}/CMSIS/Device/ST/STM32H7xx/Include",
-                "${env:DEVLIBDIR}/CMSIS/Include",
-                "${env:DEVLIBDIR}/LwIP/src/include",
-                "${env:DEVLIBDIR}/LwIP/system",
-                "${env:DEVLIBDIR}/etl-master/include",
-                "${env:DEVLIBDIR}/googletest-release-1.11.0/googletest/include",
-                "${env:DEVLIBDIR}/googletest-release-1.11.0/googlemock/include",
-                "${env:DEVLIBDIR}/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel/include",
-                "${env:DEVLIBDIR}/FreeRTOS-LTS/FreeRTOS/FreeRTOS-Kernel/portable/GCC/ARM_CM4F"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/stm32h7xx_hal_driver-src/inc",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/stm32h7xx_hal_driver-src/src",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/cmsis_device_h7-src/Include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/cmsis5-src/CMSIS/Core/Include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/lwip-src/src/include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/lwip-src/contrib/ports/freertos/include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/etl_cpp-src/include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/googletest-release-1.11.0/googletest/include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/googletest-release-1.11.0/googlemock/include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/freertos-src/include",
+                "${workspaceFolder}/build-stm32h7-debug/_deps/freertos-src/portable/GCC/ARM_CM7/r0p1"
             ],
             "defines": [
                 "_DEBUG",
@@ -29,9 +23,9 @@
                 "STM32H743xx",
                 "USE_HAL_DRIVER"
             ],
-            "compilerPath": "C:\\msys64\\mingw64\\bin\\gcc.exe",
+            "compilerPath": "C:\\apps\\arm-gnu-toolchain-13.2.Rel1-mingw-w64-i686-arm-none-eabi\\bin\\arm-none-eabi-gcc.exe",
             "cStandard": "gnu17",
-            "cppStandard": "gnu++17",
+            "cppStandard": "c++23",
             "intelliSenseMode": "windows-gcc-x64"
         }
     ],

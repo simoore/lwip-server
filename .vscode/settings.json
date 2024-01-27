@@ -1,6 +1,4 @@
 {
-  "cortex-debug.armToolchainPath": "C:/GNU_MCU_Eclipse/ARM_Embedded_GCC/xpack-arm-none-eabi-gcc-10.2.1-1.1/bin",
-  "cortex-debug.openocdPath": "C:/GNU_MCU_Eclipse/OpenOCD/xpack-openocd-0.11.0-1/bin/openocd",
   "terminal.integrated.profiles.windows": {
     "MinGW64": {
       "label": "MinGW64",
@@ -100,6 +98,7 @@
     "typeindex": "cpp",
     "typeinfo": "cpp",
     "valarray": "cpp",
-    "semaphore": "cpp"
+    "semaphore": "cpp",
+    "format": "cpp"
   }
 }

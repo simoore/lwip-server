@@ -1,5 +1,11 @@
 # Using LwIP to Build an Embedded Server
 
+1. (DONE) Move to cmake fetchcontent for third party dependancies
+2. (DONE) Check echo server still works
+3. (DONE) Move ethernet driver to use C++ PHY driver.
+4. Upgrade debug uart to use freertos synchronization primitives. 
+5. Determine a way to load a streaming TCP and UDP connection and measure benefits of various changes
+
 ## Features
 
 * TCP echo server on port 7.
@@ -91,7 +97,7 @@ can include:
 * `perf.h`: Is used for profiling sections of LwIP. PERF_START & PERF_STOP. We won't use this by setting `LWIP_PERF` 
     to 0 in `lwipopts.h`.
 * `sys_arch.h`: Needs to be provided to define things like mutexes, semaphores, and threads if using `NO_SYS 0`, that 
-    is using an operating system. For bare metal, this isn't required.
+    is using an operating system. For bare metal, this isn't required. It is provided by LwIP for FreeRTOS.
 * `cc.h`: Contains settings related to machine architecture and compiler in use.
 
 ## MQTT Broker: Mosquito
@@ -138,7 +144,6 @@ mosquitto_sub -h 192.168.112.11 -t LwipServerClock
 * Standard internet time synchronization protocol
 * Write bootloader
 * Use memory protection in FreeRTOS
-* conan package management
 
 ## References
 
