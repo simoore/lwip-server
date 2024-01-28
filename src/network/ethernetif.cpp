@@ -2,14 +2,15 @@
 #include <cstring>
 #include <span>
 
+#include "etl/vector.h"
 #include "lwip/netif.h"
 #include "lwip/opt.h"
 #include "lwip/timeouts.h"
 #include "netif/etharp.h"
-#include "stm32h7xx_hal.h"
 
 #include "lwipserver/drivers/Lan8742.h"
 #include "lwipserver/stm32h7/Base.h"
+#include "lwipserver/stm32h7/TxDescriptor.h"
 
 /*****************************************************************************/
 /********** CONSTANTS ********************************************************/
@@ -17,36 +18,13 @@
 
 static constexpr uint32_t sEthTxDescCount = 24;
 
-class TxDescriptor {
-public:
+#if LWIP_NETIF_HOSTNAME
+static constexpr bool sUseHostName = true;
+#else
+static constexpr bool sUseHostName = false;
+#endif
 
-    static constexpr uint32_t sOWNMask = 0x80000000;
-
-    void set(std::span<uint8_t> buf1, std::span<uint8_t> buf2) {
-        mDesc0 = reinterpret_cast<uint32_t>(buf1.data());
-        mDesc1 = reinterpret_cast<uint32_t>(buf2.data());
-    }
-
-    bool ownedByDMA(void) const {
-        return (mDesc3 & sOWNMask) == sOWNMask;
-    }
-
-private:
-
-    /*************************************************************************/
-    /********** PRIVATE VARIABLES ********************************************/
-    /*************************************************************************/
-
-    volatile uint32_t mDesc0;
-    volatile uint32_t mDesc1;
-    volatile uint32_t mDesc2;
-    volatile uint32_t mDesc3;
-    uint32_t mAppData0;
-    uint32_t mAppData1;
-
-} __attribute__((packed));
-
-static_assert(sizeof(TxDescriptor) == 24);
+static constexpr bool sUseHAL = true;
 
 #define IFNAME0 's'
 #define IFNAME1 't'
@@ -56,6 +34,14 @@ static_assert(sizeof(TxDescriptor) == 24);
 #define ETH_RX_BUFFER_SIZE 1000U
 #define ETH_RX_BUFFER_CNT 12U
 #define ETH_TX_BUFFER_MAX ((ETH_TX_DESC_CNT)*2U)
+
+/*****************************************************************************/
+/********** TYPES ************************************************************/
+/*****************************************************************************/
+
+using PacketBuf = struct pbuf;
+
+
 
 /*
 @Note: This interface is implemented to operate in zero-copy mode only:
@@ -85,7 +71,7 @@ typedef struct {
 ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT] __attribute__((section(".RxDecripSection"))); 
 ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT] __attribute__((section(".TxDecripSection")));
 
-//TxDescriptor mTxDescriptors[sEthTxDescCount] __attribute__((section(".TxDecripSection")));
+lwipserver::stm32h7::TxDescriptor sTxDescriptors[sEthTxDescCount];
 
 // Memory Pool Declaration
 LWIP_MEMPOOL_DECLARE(RX_POOL, ETH_RX_BUFFER_CNT, sizeof(RxBuff_t), "Zero-copy RX PBUF pool");
@@ -97,6 +83,15 @@ static uint8_t RxAllocStatus;
 /* Global Ethernet handle*/
 ETH_HandleTypeDef EthHandle;
 ETH_TxPacketConfig TxConfig;
+
+/// Keeps track of index in the sTxDescriptors array of the location of the next available Tx Buffer.
+static uint32_t sAvailableIndex = 0;
+
+/// Keeps track of the number of available TX Descriptors that the application can use.
+static uint32_t sAvaliableSize = sEthTxDescCount;
+
+/// Location of the next Tx Desccriptor to check if packet transmission is finished to free pbuf.
+static uint32_t sUnavailableTxDescIndex = 0;
 
 class Ether {
 public: 
@@ -145,6 +140,7 @@ void ethernet_link_check_state(struct netif *netif);
 /*******************************************************************************
                        LL Driver Interface ( LwIP stack --> ETH)
 *******************************************************************************/
+
 /**
  * @brief In this function, the hardware should be initialized.
  * Called from ethernetif_init().
@@ -198,6 +194,96 @@ static void low_level_init(struct netif *netif) {
     ethernet_link_check_state(netif);
 }
 
+static void lowLevelInit(struct netif *netif) {
+
+    uint8_t macaddress[6] = {ETH_MAC_ADDR0, ETH_MAC_ADDR1, ETH_MAC_ADDR2, ETH_MAC_ADDR3, ETH_MAC_ADDR4, ETH_MAC_ADDR5};
+
+    EthHandle.Instance = ETH;
+    EthHandle.Init.MACAddr = macaddress;
+    EthHandle.Init.MediaInterface = HAL_ETH_RMII_MODE;
+    EthHandle.Init.RxDesc = DMARxDscrTab;
+    EthHandle.Init.TxDesc = DMATxDscrTab;
+    EthHandle.Init.RxBuffLen = ETH_RX_BUFFER_SIZE;
+
+    // configure ethernet peripheral (GPIOs, clocks, MAC, DMA)
+    HAL_ETH_Init(&EthHandle);
+
+    /////////////////////////////////
+
+    #if 0
+    // Init the low level hardware : GPIO, CLOCK, NVIC
+    HAL_ETH_MspInit(nullptr);
+
+    // Used to select either an MII or RMII interface to the PHY.
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+    HAL_SYSCFG_ETHInterfaceSelect(SYSCFG_ETH_RMII);
+
+    // Ethernet Software reset, resets all MAC subsystem internal registers and logic
+    // After reset all the registers holds their respective reset values.
+    SET_BIT(ETH->DMAMR, ETH_DMAMR_SWR);
+    uint32_t tickstart = HAL_GetTick();
+    while (READ_BIT(ETH->DMAMR, ETH_DMAMR_SWR) > 0U) {
+        if (HAL_GetTick() > (ETH_SWRESET_TIMEOUT + tickstart)) {
+            while (true);
+        }
+    }
+
+    /*------------------ MDIO CSR Clock Range Configuration --------------------*/
+    ETH_MAC_MDIO_ClkConfig(&EthHandle);
+
+    // MAC LPI 1US Tic Counter Configuration
+    WRITE_REG(ETH->MAC1USTCR, (((uint32_t)HAL_RCC_GetHCLKFreq() / ETH_MAC_US_TICK) - 1U));
+
+    /*------------------ MAC, MTL and DMA default Configuration ----------------*/
+    ETH_MACDMAConfig(heth);
+
+    // We have added a 64 bit spacing between descriptors for optional application data.
+    MODIFY_REG(ETH->DMACCR, ETH_DMACCR_DSL, ETH_DMACCR_DSL_64BIT);
+
+    // Specify the length of the receive buffers.
+    MODIFY_REG(ETH->DMACRCR, ETH_DMACRCR_RBSZ, ((ETH_RX_BUFFER_SIZE) << 1));
+    static_assert(ETH_RX_BUFFER_SIZE % 4 == 0, "RX Buffer length must be multiple of 4");
+    
+    //ETH_DMATxDescListInit(heth);
+    ETH_DMARxDescListInit(heth);
+
+    // Set ethernet MAC address.
+    heth->Instance->MACA0HR = (static_cast<uint32_t>(ETH_MAC_ADDR5) << 8) | static_cast<uint32_t>(ETH_MAC_ADDR4);
+    heth->Instance->MACA0LR = 
+        (static_cast<uint32_t>(ETH_MAC_ADDR3) << 24) | (static_cast<uint32_t>(ETH_MAC_ADDR2) << 16) | 
+        (static_cast<uint32_t>(ETH_MAC_ADDR1) << 8)  | (static_cast<uint32_t>(ETH_MAC_ADDR0));
+    #endif
+
+    // Set Transmit Descriptor Ring Length
+    WRITE_REG(ETH->DMACTDRLR, (sEthTxDescCount - 1));
+
+    // Set Transmit Descriptor List Address
+    WRITE_REG(ETH->DMACTDLAR, reinterpret_cast<uint32_t>(sTxDescriptors));
+
+    // Set Transmit Descriptor Tail pointer
+    WRITE_REG(ETH->DMACTDTPR, reinterpret_cast<uint32_t>(sTxDescriptors));
+
+    /////////////////////////////////
+
+    netif->hwaddr_len = ETH_HWADDR_LEN;
+    netif->hwaddr[0] = ETH_MAC_ADDR0;
+    netif->hwaddr[1] = ETH_MAC_ADDR1;
+    netif->hwaddr[2] = ETH_MAC_ADDR2;
+    netif->hwaddr[3] = ETH_MAC_ADDR3;
+    netif->hwaddr[4] = ETH_MAC_ADDR4;
+    netif->hwaddr[5] = ETH_MAC_ADDR5;
+    netif->mtu = ETH_MAX_PAYLOAD;
+    netif->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
+
+    // Initialize the RX POOL
+    LWIP_MEMPOOL_INIT(RX_POOL);
+
+    HAL_ETH_SetMDIOClockRange(&EthHandle);
+    sLan8742.init<lwipserver::stm32h7::Base, Ether>();
+
+    ethernet_link_check_state(netif);
+}
+
 /// This function transmits the packet. The packet is contained in the pbuf that is passed to the function. This pbuf
 /// might be chained.
 ///
@@ -242,33 +328,86 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p) {
     return errval;
 }
 
-
-// /// @brief 
-// /// @param netif 
-// /// @param p 
-// /// @return 
-// static err_t lowLevelOutput(struct netif *netif, struct pbuf *p) {
+/// Takes the a chained packet buffer from LwIP and sets up an ethernet transaction to send it.
+///
+/// @param netif 
+///     The network interface handle from LwIP. Unused.
+/// @param p 
+///     The packet buffer to transmit.
+/// @return 
+///     ERR_IF if there are not enough TX descriptors available for the packet. ERR_OK otherwise.
+static err_t lowLevelOutput(struct netif *netif, PacketBuf *p) {
+    static_cast<void>(netif);
     
-//     using PacketBuf = struct pbuf;
+    // Analyse the received pbufs to determine the number of descriptors and the total payload size.
+    etl::vector<PacketBuf *, sEthTxDescCount> bufs;
+    uint32_t payloadLength = 0;
 
-//     // When this function returns, LwIP is going to free the buffer. Incrementing the reference count.
-//     // TODO: double check that LwIP actually does call pbuf_free when this function returns.
-//     uint32_t appDesc = 
-//     for (PacketBuf *q = p; q != nullptr; q = q->next) {
-//         if (ownedByDMA) {
-//             return ERR_IF;
-//         }
-//         if (i >= ETH_TX_DESC_CNT)
-//             return ERR_IF;
-//         pbuf_ref(p);
-//     }
+    for (PacketBuf *q = p; q != nullptr; q = q->next) {
+        if (bufs.full()) {
+            return ERR_IF;
+        }
+        bufs.push_back(q);
+        payloadLength += q->len;
+    }
 
-//     HAL_ETH_Transmit_IT(&EthHandle, &TxConfig);
+    // Determine if we have enough descriptors for the packet. Each descriptor supports two buffers.
+    if (bufs.size() > sAvaliableSize * 2) {
+        return ERR_IF;
+    }
 
-//     while (semWait(TxPktSemaphore, TIME_WAITING_FOR_INPUT) == false) {}
+    // When this function returns, LwIP is going to free the buffer. Incrementing the reference count prevents this 
+    // from happening while the ETH DMA is reading the buffer. We must free it later.
+    pbuf_ref(p);
 
-//     HAL_ETH_ReleaseTxPacket(&EthHandle);
-// }
+    // Fill in the DMA desriptors.
+    uint32_t bufIndex = 0;
+
+    // Retrieve the buffer information for the next descriptor.
+    auto createSpan = [&bufIndex, &bufs](void) -> std::span<uint8_t> {
+        if (bufIndex < bufs.size()) {
+            PacketBuf *q = bufs[bufIndex];
+            auto buf = std::span<uint8_t>(reinterpret_cast<uint8_t *>(q->payload), q->len);
+            bufIndex += 1;
+            return buf;
+        }
+        return std::span<uint8_t>();
+    };
+
+    while (bufIndex < bufs.size()) {
+
+        auto buf1 = createSpan();
+        auto buf2 = createSpan();
+
+        // Set the descriptor fields.
+        lwipserver::stm32h7::TxDescriptor &desc = sTxDescriptors[sAvailableIndex];
+        if (bufIndex == 0) {
+            desc.set(buf1, buf2, payloadLength, lwipserver::stm32h7::TxDescriptor::Order::FirstDescriptor);
+            desc.setAppData(0, 0);
+        } else if (bufIndex == bufs.size()) {
+            desc.set(buf1, buf2, payloadLength, lwipserver::stm32h7::TxDescriptor::Order::LastDescriptor);
+            desc.setAppData(reinterpret_cast<uint32_t>(p), 0);
+        } else {
+            desc.set(buf1, buf2, payloadLength, lwipserver::stm32h7::TxDescriptor::Order::NeitherFirstOrLast);
+            desc.setAppData(0, 0);
+        }
+        
+        // We keep track of where the next available descriptor should be and how many descriptors are available.
+        sAvailableIndex += 1;
+        if (sAvailableIndex == sEthTxDescCount) {
+            sAvailableIndex = 0;
+        }
+        sAvaliableSize -= 1;
+    }
+
+    // Ensure completion of descriptor preparation before transmission start.
+    __DSB();
+
+    // Start transmission, issue a poll command to Tx DMA by writing address of next immediate free descriptor.
+    WRITE_REG(ETH->DMACTDTPR, reinterpret_cast<uint32_t>(sTxDescriptors + sAvailableIndex));
+
+    return ERR_OK;
+}
 
 
 /**
@@ -288,6 +427,31 @@ static struct pbuf *low_level_input(struct netif *netif) {
     return p;
 }
 
+/// Check for TX packets that have been transmitted and free their pbufs. 
+static void releaseTxBuffers(void) {
+    while (true) {
+
+        // If all descriptors are available don't worry.
+        if (sAvaliableSize == sEthTxDescCount) {
+            return;  
+        }
+
+        lwipserver::stm32h7::TxDescriptor &desc = sTxDescriptors[sUnavailableTxDescIndex];
+        if (desc.ownedByDMA()) {
+            return;
+        }
+
+        if (desc.getAppData0()) {
+            pbuf_free(reinterpret_cast<PacketBuf *>(desc.getAppData0()));
+        }
+        sAvaliableSize += 1;
+        sUnavailableTxDescIndex += 1;
+        if (sUnavailableTxDescIndex == sEthTxDescCount) {
+            sUnavailableTxDescIndex = 0;
+        }
+    }
+}
+
 /// ethernetif_input is called periodically to read from the network interface and pass packets to the TCP/IP stack.
 /// It uses the function low_level_input() that handles the actual reception of bytes from the network interface. 
 /// Then the type of the received packet is determined and the appropriate input function is called.
@@ -295,6 +459,9 @@ static struct pbuf *low_level_input(struct netif *netif) {
 /// @param netif 
 ///     The lwip network interface structure for this ethernetif
 void ethernetif_input(struct netif *netif) {
+    if constexpr (!sUseHAL) {
+        releaseTxBuffers();
+    }
     while (true) {
         struct pbuf *p = low_level_input(netif);
         if (p == nullptr) {
@@ -306,38 +473,36 @@ void ethernetif_input(struct netif *netif) {
     }
 }
 
-/**
- * @brief Should be called at the beginning of the program to set up the
- * network interface. It calls the function low_level_init() to do the
- * actual setup of the hardware.
- *
- * This function should be passed as a parameter to netif_add().
- *
- * @param netif the lwip network interface structure for this ethernetif
- * @return ERR_OK if the loopif is initialized
- *         ERR_MEM if private data couldn't be allocated
- *         any other err_t on error
- */
+/// Should be called at the beginning of the program to set up the network interface. It calls the function 
+/// low_level_init() to do the actual setup of the hardware. This function should be passed as a parameter to 
+/// netif_add().
+///
+/// @param netif 
+///     The lwip network interface structure for this ethernetif.
+/// @return 
+///     ERR_OK if the interface is initialized, ERR_ARG if netif is nullptr.
 err_t ethernetif_init(struct netif *netif) {
-    LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+    if (netif == nullptr) {
+        return ERR_ARG;
+    }
 
 #if LWIP_NETIF_HOSTNAME
-    /* Initialize interface hostname */
-    netif->hostname = "lwip";
-#endif /* LWIP_NETIF_HOSTNAME */
+        netif->hostname = "lwipserver.local";
+#endif
 
-    netif->name[0] = IFNAME0;
-    netif->name[1] = IFNAME1;
-    /* We directly use etharp_output() here to save a function call.
-     * You can instead declare your own function an call etharp_output()
-     * from it if you have to do some checks before sending (e.g. if link
-     * is available...) */
+    netif->name[0] = 'l';
+    netif->name[1] = 's';
     netif->output = etharp_output;
     netif->linkoutput = low_level_output;
 
-    /* initialize the hardware */
-    low_level_init(netif);
-
+    if constexpr (sUseHAL) {
+        low_level_init(netif);
+        netif->linkoutput = low_level_output;
+    } else {
+        lowLevelInit(netif);
+        netif->linkoutput = lowLevelOutput;
+    }
     return ERR_OK;
 }
 

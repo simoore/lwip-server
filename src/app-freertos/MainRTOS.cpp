@@ -10,9 +10,7 @@ using namespace lwipserver;
 /*****************************************************************************/
 
 static constexpr uint32_t sHeartbeatInterval{2000};
-static constexpr uint32_t sStartTaskStackSize = 4 * configMINIMAL_STACK_SIZE;
 
-freertos::OsTask<sStartTaskStackSize> sStartTask{"StartTask"};
 network::Network sNetwork;
 TcpEchoServer sTcpEchoServer;
 
@@ -20,15 +18,10 @@ TcpEchoServer sTcpEchoServer;
 /********** MAIN AND TASKS ***************************************************/
 /*****************************************************************************/
 
-// I assume the modules initialized in this thread require the OS scheduler to be running.
-static void startThread(void) {
-    sNetwork.init();
-    sTcpEchoServer.init();
-}
-
 int main() {
     stm32h7::Base::init();
-    sStartTask.create(startThread, PRIORITY_NORMAL);
+    sNetwork.init();
+    sTcpEchoServer.init();
     vTaskStartScheduler();
     while (true) {}
 }
@@ -66,9 +59,3 @@ void vApplicationGetIdleTaskMemory(
     *ppxIdleTaskStackBuffer = uxIdleTaskStack;
     *pulIdleTaskStackSize = network::Network::sLwIPTaskStackSize;
 }
-
-/*****************************************************************************/
-/********** INTERRUPTS *******************************************************/
-/*****************************************************************************/
-
-

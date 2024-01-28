@@ -65,8 +65,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
         src/stm32h7/DebugUart.cpp
         src/stm32h7/Syscalls.cpp
         src/stm32h7/Timebase.cpp
-        src/stm32h7/Base.cpp
-        src/network/sio.cpp)
+        src/stm32h7/Base.cpp)
     target_link_libraries(stm32h7base INTERFACE LwIPFreeRTOS Stm32h7hal)
 
     set(COMMON_LIBS stm32h7base common)
@@ -74,7 +73,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
 
     add_executable(lwip-server-rtos
         src/app-freertos/MainRTOS.cpp
-        src/network/ethernetif.cpp)
+        src/network/Ethernetif.cpp)
     target_link_libraries(lwip-server-rtos PRIVATE ${COMMON_LIBS})
     set_target_properties(lwip-server-rtos PROPERTIES OUTPUT_NAME lwip-server-rtos SUFFIX ".elf")
     target_link_options(lwip-server-rtos PRIVATE ${COMMON_LINK_OPTS})

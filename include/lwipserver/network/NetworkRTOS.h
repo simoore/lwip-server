@@ -47,10 +47,7 @@ public:
 #endif
 
     /// The size of the DCHP Task in words.
-    static constexpr uint32_t sLwIPTaskStackSize = 4 * (configMINIMAL_STACK_SIZE);
-
-    /// The size of the Check Link Task in words.
-    static constexpr uint32_t sCheckLinkTaskStackSize = 2 * (configMINIMAL_STACK_SIZE);
+    static constexpr uint32_t sLwIPTaskStackSize = 8 * (configMINIMAL_STACK_SIZE);
 
     /*************************************************************************/
     /********** PUBLIC TYPES *************************************************/
