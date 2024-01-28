@@ -72,15 +72,6 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
     set(COMMON_LIBS stm32h7base common)
     set(COMMON_LINK_OPTS -Wl,-Map=${PROJECT_NAME}.map,--cref -Wl,--print-memory-usage -Wl,--no-warn-rwx-segment)
 
-    # add_executable(lwip-server-baremetal
-    #     src/app-bare-metal/Interrupts.cpp
-    #     src/app-bare-metal/Main.cpp
-    #     src/app-bare-metal/Network.cpp
-    #     src/app-bare-metal/ethernetif.c)
-    # target_link_libraries(lwip-server-baremetal lwip_baremetal ${COMMON_LIBS})
-    # set_target_properties(lwip-server-baremetal PROPERTIES OUTPUT_NAME lwip-server-baremetal SUFFIX ".elf")
-    # target_link_options(lwip-server-baremetal PRIVATE ${COMMON_LINK_OPTS})
-
     add_executable(lwip-server-rtos
         src/app-freertos/MainRTOS.cpp
         src/network/ethernetif.cpp)
@@ -89,17 +80,14 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
     target_link_options(lwip-server-rtos PRIVATE ${COMMON_LINK_OPTS})
 
     # Print executable size
-    # add_custom_command(TARGET lwip-server-baremetal 
-    #     POST_BUILD
-    #     COMMAND arm-none-eabi-size lwip-server-baremetal.elf)
     add_custom_command(TARGET lwip-server-rtos
         POST_BUILD
         COMMAND arm-none-eabi-size lwip-server-rtos.elf)
 
     # Generate disassembly - this generally takes some time so we don't want to execute it all the time.
-    # add_custom_command(TARGET ${PROJECT_NAME}
+    # add_custom_command(TARGET lwip-server-rtos
     #     POST_BUILD
-    #     COMMAND arm-none-eabi-objdump -D -S ${PROJECT_NAME}.elf > ${PROJECT_NAME}.list
+    #     COMMAND arm-none-eabi-objdump -D -S lwip-server-rtos.elf > lwip-server-rtos.list
     # )
 
 else()

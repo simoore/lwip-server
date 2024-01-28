@@ -5,7 +5,7 @@
 // RAM_D1 memory.
 extern char _estack;
 
-// The entry point of the application on a power cycle or restart. It is defined in stm32h7_startup.cpp.
+// The entry point of the application on a power cycle or restart. It is defined in Startup.cpp.
 extern "C" void Reset_Handler();
 
 // Attributes of the default weak definitions of the interrupts handlers in STM32H7.

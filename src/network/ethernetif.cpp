@@ -1,4 +1,6 @@
+#include <cstdint>
 #include <cstring>
+#include <span>
 
 #include "lwip/netif.h"
 #include "lwip/opt.h"
@@ -8,6 +10,43 @@
 
 #include "lwipserver/drivers/Lan8742.h"
 #include "lwipserver/stm32h7/Base.h"
+
+/*****************************************************************************/
+/********** CONSTANTS ********************************************************/
+/*****************************************************************************/
+
+static constexpr uint32_t sEthTxDescCount = 24;
+
+class TxDescriptor {
+public:
+
+    static constexpr uint32_t sOWNMask = 0x80000000;
+
+    void set(std::span<uint8_t> buf1, std::span<uint8_t> buf2) {
+        mDesc0 = reinterpret_cast<uint32_t>(buf1.data());
+        mDesc1 = reinterpret_cast<uint32_t>(buf2.data());
+    }
+
+    bool ownedByDMA(void) const {
+        return (mDesc3 & sOWNMask) == sOWNMask;
+    }
+
+private:
+
+    /*************************************************************************/
+    /********** PRIVATE VARIABLES ********************************************/
+    /*************************************************************************/
+
+    volatile uint32_t mDesc0;
+    volatile uint32_t mDesc1;
+    volatile uint32_t mDesc2;
+    volatile uint32_t mDesc3;
+    uint32_t mAppData0;
+    uint32_t mAppData1;
+
+} __attribute__((packed));
+
+static_assert(sizeof(TxDescriptor) == 24);
 
 #define IFNAME0 's'
 #define IFNAME1 't'
@@ -45,6 +84,8 @@ typedef struct {
 
 ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT] __attribute__((section(".RxDecripSection"))); 
 ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT] __attribute__((section(".TxDecripSection")));
+
+//TxDescriptor mTxDescriptors[sEthTxDescCount] __attribute__((section(".TxDecripSection")));
 
 // Memory Pool Declaration
 LWIP_MEMPOOL_DECLARE(RX_POOL, ETH_RX_BUFFER_CNT, sizeof(RxBuff_t), "Zero-copy RX PBUF pool");
@@ -198,16 +239,36 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p) {
 
     HAL_ETH_Transmit(&EthHandle, &TxConfig, ETH_DMA_TRANSMIT_TIMEOUT);
 
-    // pbuf_ref(p);
-
-    // HAL_ETH_Transmit_IT(&EthHandle, &TxConfig);
-
-    // while (semWait(TxPktSemaphore, TIME_WAITING_FOR_INPUT) == false) {}
-
-    // HAL_ETH_ReleaseTxPacket(&EthHandle);
-
     return errval;
 }
+
+
+// /// @brief 
+// /// @param netif 
+// /// @param p 
+// /// @return 
+// static err_t lowLevelOutput(struct netif *netif, struct pbuf *p) {
+    
+//     using PacketBuf = struct pbuf;
+
+//     // When this function returns, LwIP is going to free the buffer. Incrementing the reference count.
+//     // TODO: double check that LwIP actually does call pbuf_free when this function returns.
+//     uint32_t appDesc = 
+//     for (PacketBuf *q = p; q != nullptr; q = q->next) {
+//         if (ownedByDMA) {
+//             return ERR_IF;
+//         }
+//         if (i >= ETH_TX_DESC_CNT)
+//             return ERR_IF;
+//         pbuf_ref(p);
+//     }
+
+//     HAL_ETH_Transmit_IT(&EthHandle, &TxConfig);
+
+//     while (semWait(TxPktSemaphore, TIME_WAITING_FOR_INPUT) == false) {}
+
+//     HAL_ETH_ReleaseTxPacket(&EthHandle);
+// }
 
 
 /**

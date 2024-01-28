@@ -1,11 +1,5 @@
 # Using LwIP to Build an Embedded Server
 
-1. (DONE) Move to cmake fetchcontent for third party dependancies
-2. (DONE) Check echo server still works
-3. (DONE) Move ethernet driver to use C++ PHY driver.
-4. Upgrade debug uart to use freertos synchronization primitives. 
-5. Determine a way to load a streaming TCP and UDP connection and measure benefits of various changes
-
 ## Features
 
 * TCP echo server on port 7.
@@ -133,17 +127,18 @@ mosquitto_sub -h 192.168.112.11 -t LwipServerClock
 
 ## TODO: 
 
-* Determine the HSE, CSI, HSI values.
-* Unit test DMA buffer classes, I'm sure at least the TX one has a bug in it.
 * Move stack and functions and application data to DTCMEM & ITCMEM
 * Make sure MPU region size and the LWIP RAM size are the same.
-* Allow _write to always use DMA by servicing the debug uart in the _read while loop.
 * Re-write more optimal ethernet driver
 * Write real-time clock.
-* Test MQTT subscriptions to set the clocks time.
 * Standard internet time synchronization protocol
 * Write bootloader
-* Use memory protection in FreeRTOS
+* (DONE) Move to cmake fetchcontent for third party dependancies
+* (DONE) Check echo server still works
+* (DONE) Move ethernet driver to use C++ PHY driver.
+* Write an low level output with a large number of descriptors and queues buffers to keep the ethernet driver fully utilized.
+* Upgrade debug uart to use freertos synchronization primitives rather than my own buffer types
+
 
 ## References
 
