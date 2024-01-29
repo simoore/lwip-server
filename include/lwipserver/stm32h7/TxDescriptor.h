@@ -32,23 +32,27 @@ public:
     /********** PUBLIC FUNCTIONS *********************************************/
     /*************************************************************************/
 
-    void set(std::span<uint8_t> buf1, std::span<uint8_t> buf2, uint32_t payloadLength, Order order) {
+    void set(std::span<uint8_t> buf1, std::span<uint8_t> buf2, uint32_t payloadLength) {
         mDesc0 = (buf1.size() != 0) ? reinterpret_cast<uint32_t>(buf1.data()) : 0;
         mDesc1 = (buf2.size() != 0) ? reinterpret_cast<uint32_t>(buf2.data()) : 0;
         mDesc2 = (buf2.size() << 16) | buf1.size();
-        mDesc3 = sDesc3CIC | payloadLength;
-        uint32_t desc3 = sDesc3OWN | sDesc3CIC | payloadLength;
-        if (order == Order::FirstDescriptor) {
-            mDesc3 = desc3 | sDesc3FD;
-        } else if (order == Order::LastDescriptor) {
-            mDesc3 = desc3 | sDesc3LD;
-        } else {
-            mDesc3 = desc3;
-        }
+        mDesc3 = mDesc3 | sDesc3CIC | payloadLength;
     }
 
     bool ownedByDMA(void) const {
         return (mDesc3 & sDesc3OWN) == sDesc3OWN;
+    }
+
+    void setOwned(void) {
+        mDesc3 = mDesc3 | sDesc3OWN;
+    }
+
+    void setFirstDescriptor(void) {
+        mDesc3 = mDesc3 | sDesc3FD;
+    }
+
+    void setLastDescriptor(void) {
+        mDesc3 = mDesc3 | sDesc3LD;
     }
 
     void setAppData(uint32_t data0, uint32_t data1) {

@@ -31,11 +31,15 @@ public:
     ///     The connection which received the data. The received data is in the readBuffer field.
     void recv(TcpServer::TcpConnection &connection) {
         mTcpServer.write(connection, connection.readBuffer);
+        pbuf_free(connection.readBuffer);
+        connection.readBuffer = nullptr;
     }
 
 private:
 
     /// The TCP server that handles the communication to this echo server.
     TcpServer mTcpServer;
+
+    TcpServer::PacketBuffer *test = nullptr;
 
 }; // class TcpEchoServer

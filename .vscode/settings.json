@@ -100,5 +100,6 @@
     "valarray": "cpp",
     "semaphore": "cpp",
     "format": "cpp"
-  }
+  },
+  "cortex-debug.variableUseNaturalFormat": false
 }

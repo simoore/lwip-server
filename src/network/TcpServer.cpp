@@ -50,9 +50,10 @@ void TcpServer::write(TcpConnection &connection, PacketBuffer *pbuf) {
     }
 
     if (connection.writeBuffer) {
-        pbuf_cat(connection.writeBuffer, pbuf);
+        pbuf_chain(connection.writeBuffer, pbuf);
     } else {
         connection.writeBuffer = pbuf;
+        pbuf_ref(pbuf);
     }
 
     writeToTcp(connection);
@@ -85,7 +86,7 @@ void TcpServer::close(TcpConnection &connection) {
 }
 
 void TcpServer::writeToTcp(TcpConnection &connection) {
-
+    
     // Enqueue data for transmission. The while loop cycles through the chained pbuf.
     while (true) {
 
@@ -175,6 +176,7 @@ err_t TcpServer::recv(TcpConnection &connection, PacketBuffer *packetBuffer, err
     // If we receive an empty tcp frame from the LwIP stack, this signals to the application to close the 
     // connections.
     if (!packetBuffer) {
+        printf("TcpServer::recv, closing connection\n");
         connection.state = ConnectionState::Closing;
         if (connection.writeBuffer) {
             writeToTcp(connection);
@@ -186,6 +188,7 @@ err_t TcpServer::recv(TcpConnection &connection, PacketBuffer *packetBuffer, err
 
     // If there is an error, just free the packet buffer and don't acknowledge the received data.
     if (err != ERR_OK) {
+        printf("TcpServer::recv, recv err\n");
         pbuf_free(packetBuffer);
         return err;
     }
@@ -194,17 +197,20 @@ err_t TcpServer::recv(TcpConnection &connection, PacketBuffer *packetBuffer, err
     tcp_recved(connection.controlBlock, packetBuffer->tot_len);
 
     // Add the data to the connection's read buffer.
-    if (connection.readBuffer) {
-        pbuf_cat(connection.readBuffer, packetBuffer);
-    } else {
-        connection.readBuffer = packetBuffer;
-    }
-
+    // if (connection.readBuffer) {
+    //     pbuf_chain(connection.readBuffer, packetBuffer);
+    // } else {
+    //     connection.readBuffer = packetBuffer;
+    //     pbuf_ref(packetBuffer);
+    // }
+    
     // Send the data to the application. You send the connection, because you want to know who to reply to.
     // The application must consume and dealloacte the receive buffer.
     if (mRecvCallback.is_valid()) {
-        mRecvCallback(connection);
+       // mRecvCallback(connection);
+       tcp_write(connection.controlBlock, "Testing\n", 8, TCP_WRITE_FLAG_COPY);
     }
+    pbuf_free(packetBuffer);
     return ERR_OK;
 }
 

@@ -4,10 +4,9 @@
 
 namespace lwipserver::stm32h7 {
 
-/// Here we use the MPU for three purposes:
-/// 1) ...
-/// 2) We define the section where the ETH RX DMA buffers are as not cacheable.
-/// 3) We define the section where the ETH TX DMA buffers are (the LwIP heap) as not cacheable.
+/// Here we use the MPU for:
+/// * We define the section where the ETH RX DMA buffers are as not cacheable.
+/// * We define the section where the ETH TX DMA buffers are (the LwIP heap) as not cacheable.
 void Base::mpuConfig() {
     MPU_Region_InitTypeDef MPU_InitStruct;
 
@@ -32,7 +31,7 @@ void Base::mpuConfig() {
     // Configure the MPU attributes as Device not cacheable for ETH DMA descriptors.
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
     MPU_InitStruct.BaseAddress = 0x30000000;
-    MPU_InitStruct.Size = MPU_REGION_SIZE_1KB;
+    MPU_InitStruct.Size = MPU_REGION_SIZE_2KB;
     MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
     MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
     MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;

@@ -114,12 +114,13 @@ private:
     ///     ERR_MEM
     err_t accept(TcpControlBlock *newpcb, err_t err);
 
-    /// Process received data.
+    /// Process received data. 
     ///
     /// @param connection
     ///     The TCP connection that received the data.
     /// @param packetBuffer
-    ///     The data that was received.
+    ///     The data that was received. The packet buffer is freed when this function returns so if you store a
+    ///     to it make sure you increment the reference count.
     /// @param err
     ///     Any errors that occured when receiving.
     err_t recv(TcpConnection &connection, PacketBuffer *packetBuffer, err_t err);
