@@ -81,8 +81,9 @@ private:
     uint32_t mAppData0;
     uint32_t mAppData1;
 
-} __attribute__((packed));
+};
 
 static_assert(sizeof(TxDescriptor) == 24);
+static_assert(alignof(TxDescriptor) == 4);
 
 } // namespace lwipserver::stm32h7

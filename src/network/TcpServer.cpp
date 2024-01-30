@@ -197,18 +197,17 @@ err_t TcpServer::recv(TcpConnection &connection, PacketBuffer *packetBuffer, err
     tcp_recved(connection.controlBlock, packetBuffer->tot_len);
 
     // Add the data to the connection's read buffer.
-    // if (connection.readBuffer) {
-    //     pbuf_chain(connection.readBuffer, packetBuffer);
-    // } else {
-    //     connection.readBuffer = packetBuffer;
-    //     pbuf_ref(packetBuffer);
-    // }
+    if (connection.readBuffer) {
+        pbuf_chain(connection.readBuffer, packetBuffer);
+    } else {
+        connection.readBuffer = packetBuffer;
+        pbuf_ref(packetBuffer);
+    }
     
     // Send the data to the application. You send the connection, because you want to know who to reply to.
     // The application must consume and dealloacte the receive buffer.
     if (mRecvCallback.is_valid()) {
-       // mRecvCallback(connection);
-       tcp_write(connection.controlBlock, "Testing\n", 8, TCP_WRITE_FLAG_COPY);
+       mRecvCallback(connection);
     }
     pbuf_free(packetBuffer);
     return ERR_OK;
