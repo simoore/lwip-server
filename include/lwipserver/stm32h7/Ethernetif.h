@@ -9,20 +9,14 @@
 #include "lwip/timeouts.h"
 #include "netif/etharp.h"
 
-#if LWIP_DHCP
-static constexpr bool sUseDHCP = true;
-#else
-static constexpr bool sUseDHCP = false;
-#endif
-
 err_t ethernetif_init(struct netif *netif);
 void ethernetif_input(struct netif *netif);
 void ethernet_link_check_state(struct netif *netif);
 
-namespace lwipserver::network {
+namespace lwipserver::stm32h7 {
 
 /// This is a C++ wrapper class for ST's ethernet driver for STM32H7.
-class EthernetifCpp final {
+class Ethernetif final {
 public:
 
     /*************************************************************************/
@@ -43,6 +37,12 @@ public:
     static constexpr uint8_t GW_ADDR1{168U};
     static constexpr uint8_t GW_ADDR2{112U};
     static constexpr uint8_t GW_ADDR3{1U};
+
+#if LWIP_DHCP
+    static constexpr bool sUseDHCP = true;
+#else
+    static constexpr bool sUseDHCP = false;
+#endif
 
     /*************************************************************************/
     /********** PUBLIC TYPES *************************************************/
@@ -162,7 +162,7 @@ private:
     /// @param netif
     ///     Ignored netif for the link whose status has changed.
     static void lwipLinkCallback(Netif *netif) {
-        auto *interface = reinterpret_cast<EthernetifCpp *>(netif->state);
+        auto *interface = reinterpret_cast<Ethernetif *>(netif->state);
         if (interface->mLinkCallback) {
             interface->mLinkCallback();
         }

@@ -2,6 +2,8 @@
 
 #include "lwipserver/network/TcpServer.h"
 
+namespace lwipserver::network {
+
 /*************************************************************************/
 /********** PUBLIC FUNCTIONS *********************************************/
 /*************************************************************************/
@@ -305,3 +307,5 @@ void TcpServer::error(void *arg, err_t err) {
     TcpConnection *connection = reinterpret_cast<TcpConnection *>(arg);
     connection->server->error(*connection);
 }
+
+} // namespace lwip::server

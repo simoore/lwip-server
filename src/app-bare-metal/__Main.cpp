@@ -22,7 +22,7 @@ void askForName() {
     printf("\nYour name:\n");
     sStm32h7Base.wait(500);
     scanf("%s", buf);
-    sStm32h7Base.wait(500);git 
+    sStm32h7Base.wait(500); 
     printf("\nHello, %s!\n", buf);
 }
 #endif

@@ -127,18 +127,10 @@ mosquitto_sub -h 192.168.112.11 -t LwipServerClock
 
 ## TODO: 
 
-* Move stack and functions and application data to DTCMEM & ITCMEM
-* Make sure MPU region size and the LWIP RAM size are the same.
-* Re-write more optimal ethernet driver
-* Write real-time clock.
-* Standard internet time synchronization protocol
+* Write real-time clock that support standard internet time synchronization protocols
 * Write bootloader
-* (DONE) Move to cmake fetchcontent for third party dependancies
-* (DONE) Check echo server still works
-* (DONE) Move ethernet driver to use C++ PHY driver.
-* Write an low level output with a large number of descriptors and queues buffers to keep the ethernet driver fully utilized.
-* Upgrade debug uart to use freertos synchronization primitives rather than my own buffer types
-
+* Fix up unit tests
+* Explore ITM debug features of chip
 
 ## References
 

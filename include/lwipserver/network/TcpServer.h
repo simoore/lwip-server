@@ -1,11 +1,13 @@
-#ifndef TCP_SERVER_H
-#define TCP_SERVER_H
+#pragma once
 
 #include <cstdio>
+
 #include "etl/delegate.h"
 #include "etl/list.h"
 #include "lwip/pbuf.h"
 #include "lwip/tcp.h"
+
+namespace lwipserver::network {
 
 /// A generic TCP server that supports a number of connections.
 ///
@@ -215,6 +217,6 @@ private:
     /// Callback to return data to the higher level protocol layer.
     RecvCallback mRecvCallback;
 
-}; // class TcpServer
+};
 
-#endif // TCP_SERVER_H
+} // namespace lwipserver::network

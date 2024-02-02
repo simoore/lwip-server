@@ -3,6 +3,8 @@
 
 #include "lwipserver/network/MqttClient.h"
 
+namespace lwipserver::network {
+
 bool MqttClient::init(const Config &cfg) {
     mConfig = cfg;
     mLwIPClient = mqtt_client_new();
@@ -159,3 +161,4 @@ void MqttClient::incomingData(const uint8_t *data, uint16_t len, uint8_t flags) 
     }
 }
 
+} // namespace lwipserver::freertos

@@ -52,20 +52,20 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
     target_sources(common INTERFACE 
         src/network/MqttClient.cpp 
         src/network/TcpServer.cpp 
-        src/utils/DmaRxBuffer.cpp 
-        src/utils/DmaTxBuffer.cpp)
+        src/utils/DmaRxBuffer.cpp)
     target_link_libraries(common INTERFACE LwIPFreeRTOS Stm32h7hal etl)
 
     add_library(stm32h7base INTERFACE)
     target_sources(stm32h7base INTERFACE
-        src/stm32h7/Startup.cpp
-        src/stm32h7/System.cpp
-        src/stm32h7/Vectors.cpp
-        src/stm32h7/Interrupts.cpp
+        src/stm32h7/Base.cpp
         src/stm32h7/DebugUart.cpp
+        src/stm32h7/Ethernetif.cpp
+        src/stm32h7/Interrupts.cpp
+        src/stm32h7/Startup.cpp
         src/stm32h7/Syscalls.cpp
+        src/stm32h7/System.cpp
         src/stm32h7/Timebase.cpp
-        src/stm32h7/Base.cpp)
+        src/stm32h7/Vectors.cpp)
     target_link_libraries(stm32h7base INTERFACE LwIPFreeRTOS Stm32h7hal)
 
     set(COMMON_LIBS stm32h7base common)
@@ -73,7 +73,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
 
     add_executable(lwip-server-rtos
         src/app-freertos/MainRTOS.cpp
-        src/network/Ethernetif.cpp)
+        )
     target_link_libraries(lwip-server-rtos PRIVATE ${COMMON_LIBS})
     set_target_properties(lwip-server-rtos PROPERTIES OUTPUT_NAME lwip-server-rtos SUFFIX ".elf")
     target_link_options(lwip-server-rtos PRIVATE ${COMMON_LINK_OPTS})

@@ -7,7 +7,7 @@
 
 #include "lwipserver/concepts/Base.h"
 #include "lwipserver/freertos/OsTask.h"
-#include "lwipserver/network/EthernetifCpp.h"
+#include "lwipserver/stm32h7/Ethernetif.h"
 #include "lwipserver/utils/LoopTimer.h"
 
 // Sort out EthernetifCpp interface for the RTOS version
@@ -65,7 +65,7 @@ public:
 
     /// Callback from interface that indicates the status of the link has changed. It is used to start/stop the DHCP
     /// process.
-    using LinkCallback = EthernetifCpp::LinkCallback;
+    using LinkCallback = stm32h7::Ethernetif::LinkCallback;
 
     /*************************************************************************/
     /********** PUBLIC FUNCTIONS *********************************************/
@@ -84,7 +84,7 @@ public:
 
         mLinkTimer.setExpiry(sLinkTimerPeriod_ms);
         mDHCPTimer.setExpiry(sDhcpTimerPeriod_ms);
-        mLinkTimer.registerCallback(std::bind(&EthernetifCpp::checkLinkState, &mInterface));
+        mLinkTimer.registerCallback(std::bind(&stm32h7::Ethernetif::checkLinkState, &mInterface));
         mDHCPTimer.registerCallback(std::bind(&Network::dhcpProcess, this));
     }
 
@@ -148,7 +148,7 @@ private:
     /*************************************************************************/
 
     /// The ethernet interface handler.
-    EthernetifCpp mInterface;  
+    stm32h7::Ethernetif mInterface;  
 
     /// A state machine monitors the status of the DHCP client.
     DhcpState mDhcpState{DhcpState::LinkDown};

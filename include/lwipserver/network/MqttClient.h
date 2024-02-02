@@ -7,6 +7,8 @@
 #include "lwipserver/concepts/Base.h"
 #include "lwipserver/utils/LoopTimer.h"
 
+namespace lwipserver::network {
+
 /// Implements a MQTT client. To use:
 /// 1. Call init(..) and check the return value to see if was successful.
 /// 2. Call service(..) periodically in the application to run the module. 
@@ -203,4 +205,6 @@ private:
     Client *mLwIPClient{nullptr};
     Subscription *mActiveSubscription{nullptr};
     
-}; // class MqttClient
+};
+
+} // namespace lwipserver::network

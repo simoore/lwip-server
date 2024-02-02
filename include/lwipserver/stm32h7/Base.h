@@ -54,7 +54,7 @@ public:
     /// @param size
     ///     The size of the buffer.
     static void debug(const char *data, uint32_t size) {
-        debugUartTx(data, size);
+        debugUartTx({reinterpret_cast<const uint8_t *>(data), size});
     }
 
 };

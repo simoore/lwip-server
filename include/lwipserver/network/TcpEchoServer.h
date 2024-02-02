@@ -2,6 +2,8 @@
 
 #include "TcpServer.h"
 
+namespace lwipserver::network {
+
 class TcpEchoServer {
 public:
 
@@ -37,9 +39,13 @@ public:
 
 private:
 
+    /*************************************************************************/
+    /********** PRIVATE VARIABLES ********************************************/
+    /*************************************************************************/
+
     /// The TCP server that handles the communication to this echo server.
     TcpServer mTcpServer;
 
-    TcpServer::PacketBuffer *test = nullptr;
+};
 
-}; // class TcpEchoServer
+} // namespace lwipserver::network

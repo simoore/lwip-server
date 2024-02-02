@@ -12,7 +12,7 @@ using namespace lwipserver;
 static constexpr uint32_t sHeartbeatInterval{2000};
 
 network::Network sNetwork;
-TcpEchoServer sTcpEchoServer;
+network::TcpEchoServer sTcpEchoServer;
 
 /*****************************************************************************/
 /********** MAIN AND TASKS ***************************************************/
