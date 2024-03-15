@@ -20,7 +20,7 @@ jobs:
     - name: Install Build Tools
       run: |
         sudo apt update 
-        sudo apt install ninja
+        sudo apt install ninja-build
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory.
