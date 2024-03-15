@@ -18,7 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Build Tools
-      run: apt install ninja
+      run: |
+        sudo apt update 
+        sudo apt install ninja
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory.
