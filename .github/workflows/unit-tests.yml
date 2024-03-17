@@ -5,11 +5,11 @@ name: Unit Test Workflow
 
 # This describes when the workflow is executed.
 on:
-  workflow_dispatch:
-  push:
-    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
 
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install Build Tools
       run: |
         sudo apt update 
