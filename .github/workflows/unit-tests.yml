@@ -27,7 +27,6 @@ jobs:
       run: |
         sudo apt update 
         sudo apt install ninja-build
-        arm-none-eabi-g++ --version
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory.
