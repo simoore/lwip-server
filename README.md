@@ -170,3 +170,7 @@ mosquitto_sub -h 192.168.112.11 -t LwipServerClock
 
 * [How to manage multiple build configurations with cmake](https://stackoverflow.com/questions/57689789/how-to-manage-multiple-build-configurations-with-cmake)
 * [An Introduction to Modern CMake](https://cliutils.gitlab.io/modern-cmake/)
+
+### Github Actions
+
+* [Github: github-actions-course-resources](https://github.com/academind/github-actions-course-resources)
