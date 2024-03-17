@@ -1,8 +1,8 @@
-#ifndef IETH_H
-#define IETH_H
+#pragma once
 
 #include <cstdint>
 #include <utility>
+
 #include "etl/delegate.h"
 #include "etl/vector.h"
 
@@ -122,5 +122,3 @@ public:
 	virtual bool writeReg(uint32_t devAddr, uint32_t regAddr, uint32_t regVal) = 0;
 
 }; // class IEth
-
-#endif // IETH_H

@@ -95,31 +95,18 @@ else()
     # Unit Tests
     ###########################################################################
 
-    set(UNIT_TESTS_COMPILE_OPTIONS -g3 -fno-omit-frame-pointer)
-    set(UNIT_TESTS_CPP_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 -fno-rtti>)
+    enable_testing()
 
-    set(LWIP_INCLUDE_DIRS ${LWIP_DIR}/src/include tests)
-    set(LWIP_COMPILER_FLAGS ${UNIT_TESTS_COMPILE_OPTIONS} ${UNIT_TESTS_CPP_OPTIONS})
-    set(unittestsSources 
-        ${LWIP_DIR}/src/netif/ethernet.c
-        src/common/drivers/Lan8742.cpp
-        tests/sys_arch.c
-        #tests/EthernetInterfaceTest.cpp
+    add_executable(unittests
         tests/Lan8742Test.cpp
         tests/Main.cpp)
-    add_executable(unittests ${unittestsSources})
-    target_include_directories(unittests PRIVATE
-        src/common
-        tests/
-        ${DEVLIBDIR}/etl-master/include
-        ${DEVLIBDIR}/lwip/src/include
-        ${DEVLIBDIR}/googletest-release-1.11.0/googlemock/include 
-        ${DEVLIBDIR}/googletest-release-1.11.0/googletest/include)
-    target_link_directories(unittests PRIVATE
-        ${DEVLIBDIR}/googletest-release-1.11.0/build/lib)
-    target_link_libraries(unittests pthread gmock gtest lwip)
-    target_compile_options(unittests PRIVATE ${UNIT_TESTS_COMPILE_OPTIONS} ${UNIT_TESTS_CPP_OPTIONS})
-    target_link_options(unittests PRIVATE -static-libasan -static-libgcc -static-libstdc++)
+    target_include_directories(unittests PRIVATE include)
+    target_link_libraries(unittests gmock gtest etl)
+    target_compile_options(unittests PRIVATE 
+        -g3 -fno-omit-frame-pointer
+        $<$<COMPILE_LANGUAGE:CXX>:-std=c++23 -fno-rtti>)
+
+    add_test(NAME UnitTests COMMAND unittests)
 
 endif()
 

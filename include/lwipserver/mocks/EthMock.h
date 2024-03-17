@@ -1,19 +1,25 @@
-#ifndef ETH_MOCK_H
-#define ETH_MOCK_H
+#pragma once
     
 #include "gmock/gmock.h"
-#include "base/IEth.h"
 
-class EthMock: public IEth {
+#include "lwipserver/base/IEth.h"
+
+class EthMock {
 public:
-    MOCK_METHOD((void), init, (const Config &cfg), (override));
-	MOCK_METHOD((Status &), status, (), (const, override));
-	MOCK_METHOD((void), startEthernet, (DuplexMode duplexMode, Speed speed), (override));
-	MOCK_METHOD((void), stopEthernet, (), (override));
-	MOCK_METHOD((Packet *), readData, (), (override));
-	MOCK_METHOD((bool), writeData, (Packet &packet), (override));
-    MOCK_METHOD((std::pair<bool, uint32_t>), readReg, (uint32_t, uint32_t), (override));
-    MOCK_METHOD((bool), writeReg, (uint32_t, uint32_t, uint32_t), (override));
+    MOCK_METHOD((std::pair<bool, uint32_t>), readReg, (uint32_t, uint32_t), ());
+    MOCK_METHOD((bool), writeReg, (uint32_t, uint32_t, uint32_t), ());
 };
 
-#endif
+class EthMockStatic {
+public:
+
+	static inline EthMock *mock = nullptr;
+
+	static std::pair<bool, uint32_t> readReg(uint32_t devAddr, uint32_t regAddr) {
+		return mock->readReg(devAddr, regAddr);
+	}
+	
+	static bool writeReg(uint32_t devAddr, uint32_t regAddr, uint32_t regVal) {
+		return mock->writeReg(devAddr, regAddr, regVal);
+	}
+};
