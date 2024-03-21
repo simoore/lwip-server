@@ -125,6 +125,22 @@ contents of the published packet using the mosquitto's sub client, for example t
 mosquitto_sub -h 192.168.112.11 -t LwipServerClock
 ```
 
+## Clang Tidy
+
+We add the cache variable `"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"` to the build we want to clang tidy to run on. This 
+generates `compile_commands.json` which provides the information clang-tidy needs to analyze the source files.
+Then we define the clang tidy configuration file `.clang-tidy`. Then you can execute the linter with the following
+command.
+
+```
+clang-tidy -p .\build-unit-tests tests\Lan8742Test.cpp
+```
+
+The `-p` option points the build directory to find the `compile_commands.json` and it is followed by the source
+file to analyzer. The remainder of the options come from the `.clang-tidy` config file. Source files can only be 
+analyzed if they are compiled with clang. Therefore if you want to use it on the STM32H7 source files, you'll need\
+to setup a clang build.
+
 ## TODO: 
 
 * Write real-time clock that support standard internet time synchronization protocols

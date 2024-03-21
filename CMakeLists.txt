@@ -91,6 +91,9 @@ if (CMAKE_SYSTEM_NAME MATCHES "Generic")
 
 else()
 
+    # This executes compilation. I'd rather call it separately.
+    # set(CMAKE_CXX_CLANG_TIDY clang-tidy)
+
     ###########################################################################
     # Unit Tests
     ###########################################################################
